@@ -42,17 +42,21 @@ def diff(
     window_start: dt.date,
     window_end: dt.date,
     now: dt.datetime,
+    seen_until: dt.date | None = None,
 ) -> list[Change]:
     """Compare the stored lessons with a fresh fetch of [window_start, window_end].
 
-    Only stored lessons inside the fetched window can be 'removed' (outside it we simply did not look).
+    Only stored lessons inside the fetched window can be 'removed' (outside it we simply did not look). Likewise,
+    a lesson after `seen_until` (the end of the previous fetch window) is not 'added': it may have existed for a long
+    time, we only see it now because the window moved on or grew.
     """
     changes: list[Change] = []
     new_by_id = {lesson.id: lesson for lesson in new}
     for lesson in new:
         before = old.get(lesson.id)
         if before is None:
-            changes.append(Change("added", lesson, None, now))
+            if seen_until is None or lesson.start.date() <= seen_until:
+                changes.append(Change("added", lesson, None, now))
             continue
         fields = tuple(f for f in Lesson.COMPARED if getattr(before, f) != getattr(lesson, f))
         if fields:

@@ -215,7 +215,8 @@ async def lesson_detail(request: web.Request) -> web.Response:
     if info is not None:
         this_start = f"{lesson.start:%H:%M}"
         history = [
-            {"entry": h, "current": h.date == lesson.start.date() and h.start == this_start}
+            # An exam entry also covers the drive back, which is a separate appointment in the week view.
+            {"entry": h, "current": h.date == lesson.start.date() and (h.start == this_start or h.start < this_start < h.end)}
             for h in sorted(info.history, key=lambda h: (h.date, h.start), reverse=True)
         ]
         done, coming = info.lesson_counts()

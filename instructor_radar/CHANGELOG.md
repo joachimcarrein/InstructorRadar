@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Lesson history: an exam and the drive back from the exam centre are one line now ("Exam 2"), with the result
+  (**Passed** / **Not passed**) once the planner has it. The drive back no longer shows as a separate exam without
+  "Planned".
+- Lessons that only appear because the fetch window grew or moved on (more days ahead, or the next day coming into
+  view) are no longer marked **New**: they were not added, they were simply not looked at before.
+
 ## 2026.11.2
 
 - No notifications at all until a user sets them up in **Settings › My notifications** (schedule changes no

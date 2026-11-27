@@ -96,6 +96,7 @@ class HistoryEntry:
     status: Status
     cancel_reason: str = ""
     end: str = ""  # "HH:MM" or ""
+    result: str = ""  # exams only: "passed" | "failed" | "" (unknown / not taken yet)
 
     @property
     def minutes(self) -> int:
@@ -132,6 +133,7 @@ class HistoryEntry:
             status=Status(d.get("status", Status.DONE)),
             cancel_reason=str(d.get("cancel_reason", "")),
             end=str(d.get("end", "")),
+            result=str(d.get("result", "")),
         )
 
 
