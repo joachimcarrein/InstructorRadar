@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Switching **show student ages** on now fetches the students again at the next fetch, also the same day: lessons
+  fetched while ages were off no longer stay without an age until the next day.
+
 ## 2026.11.4
 
 - **First lesson** / **New to you** also count earlier lessons that are still planned: lesson 3-4 the day after a

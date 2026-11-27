@@ -55,6 +55,8 @@ class RunInfo:
 class StudentRecord:
     info: StudentInfo
     refreshed: dt.date
+    # Fetched while ages were on. When ages are switched on later, records without it are fetched again.
+    with_age: bool = False
 
 
 @dataclass
@@ -73,6 +75,7 @@ class State:
                 k: {
                     "age": r.info.age,
                     "refreshed": r.refreshed.isoformat(),
+                    "with_age": r.with_age,
                     "history": [h.to_dict() for h in r.info.history],
                 }
                 for k, r in self.students.items()
@@ -94,6 +97,7 @@ class State:
                         key=k, age=v.get("age"), history=[HistoryEntry.from_dict(h) for h in v.get("history", [])]
                     ),
                     refreshed=dt.date.fromisoformat(v["refreshed"]),
+                    with_age=bool(v.get("with_age", False)),
                 )
                 for k, v in d.get("students", {}).items()
             },
@@ -131,6 +135,7 @@ def apply_privacy(state: State, keep_name: bool, keep_age: bool) -> State:
     if not keep_age:
         for record in state.students.values():
             record.info = replace(record.info, age=None)
+            record.with_age = False
     return state
 
 
