@@ -4,7 +4,7 @@
 - Reminder: N minutes before each lesson.
 - Morning summary: today's lessons at the user's time.
 Reminders and summaries are sent at most 30 minutes late (e.g. after a restart), never later, and only once.
-When nobody has set up notifications yet, changes go to a persistent notification in Home Assistant instead.
+Nothing is sent to anyone who did not choose devices and switch a notification on themselves.
 """
 
 from __future__ import annotations
@@ -25,8 +25,6 @@ log = logging.getLogger(__name__)
 
 LATE = dt.timedelta(minutes=30)
 MAX_LINES = 10
-CHANGES_NOTIFICATION_ID = "instructor_radar_changes"
-FALLBACK_CHANGES_DAYS = 2
 
 
 class Notifier:
@@ -51,20 +49,9 @@ class Notifier:
     # ---------------------------------------------------------------- changes
 
     async def changes(self, changes: list[Change], now: dt.datetime) -> None:
+        """Only to users who switched it on themselves; nobody set up = nothing is sent (the Changes page shows them)."""
         naive = now.replace(tzinfo=None)
-        everyone = self._recipients()
-        recipients = [(u, p) for u, p in everyone if p.changes]
-        if not everyone:
-            # Nobody set up notifications yet: keep them visible in Home Assistant.
-            relevant = to_notify(changes, naive.date(), FALLBACK_CHANGES_DAYS, naive)
-            if relevant:
-                t = Translator(await self._lang(None))
-                await self.radar.ha.persistent_notification(
-                    t("notify_title"), _changes_message(relevant, t), CHANGES_NOTIFICATION_ID
-                )
-                log.info("Change notification shown in Home Assistant (%d changes)", len(relevant))
-            return
-        for user_id, prefs in recipients:
+        for user_id, prefs in [(u, p) for u, p in self._recipients() if p.changes]:
             relevant = to_notify(changes, naive.date(), prefs.changes_days, naive)
             if not relevant:
                 continue

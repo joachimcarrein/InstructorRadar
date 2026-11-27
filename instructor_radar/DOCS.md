@@ -82,7 +82,8 @@ Notifications are written in your language (see *Language*). Reminders and summa
 (for example after a restart), never later, and only once. They use the schedule of the last fetch, so a lesson
 cancelled since then is still reminded (see *Changes during the day*).
 
-As long as **nobody** has set up notifications, schedule changes appear as a notification in Home Assistant itself.
+**Nothing is sent until you set it up:** tick your devices, switch on what you want and press **Save**. Without
+that, Instructor Radar sends no notifications at all; the **Changes** page still shows what changed.
 
 ## Using it
 
