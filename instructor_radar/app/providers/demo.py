@@ -50,7 +50,6 @@ class DemoProvider:
                             location=_LOCATIONS[n % 2],
                             status=Status.PLANNED,
                             student_key=key,
-                            student_name=name if session.settings.include_student_name else None,
                         )
                     )
                     n += 1
@@ -67,7 +66,7 @@ class DemoProvider:
         return lessons
 
     async def fetch_student(self, session: PlannerSession, student_key: str, today: dt.date) -> StudentInfo:
-        _, _, age, _, (mine, other) = next(s for s in _STUDENTS if s[0] == student_key)
+        _, name, age, _, (mine, other) = next(s for s in _STUDENTS if s[0] == student_key)
         history = []
         for i in range(mine + other):
             with_me = i >= other
@@ -91,5 +90,8 @@ class DemoProvider:
             )
         )
         return StudentInfo(
-            key=student_key, age=age if session.settings.include_student_age else None, history=history
+            key=student_key,
+            age=age if session.settings.include_student_age else None,
+            history=history,
+            name=name if session.settings.include_student_name else None,
         )

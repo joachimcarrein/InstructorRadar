@@ -2,9 +2,9 @@
 
 - en.json is the reference: every key lives there.
 - <lang>.json (nl, fr, ...) is a full translation: the same keys and placeholders as English.
-- <lang>-<REGION>.json (nl-BE, ...) holds only the words that differ in that region; every other text falls back to
-  <lang>.json, then to English. A regional file needs its language file.
-Adding a language = adding a file: it is found at start-up and offered in the language menu.
+- <lang>-<REGION>.json (nl-BE, ...) holds only the words that differ in that region (plus its own language_name);
+  every other text falls back to <lang>.json, then to English. A regional file needs its language file.
+Adding a language or region = adding a file: it is found at start-up and offered in the language menu.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ def _load() -> dict[str, dict[str, str]]:
 
 
 TEXTS: dict[str, dict[str, str]] = _load()
-LANGUAGES = sorted(code for code in TEXTS if "-" not in code)  # full languages (menu)
+LANGUAGES = sorted(TEXTS)  # the language menu: languages and their regional variants ('nl', 'nl-BE')
 
 
 def _canonical(code: str) -> str:
@@ -71,5 +71,5 @@ class Translator:
 
 
 def language_names() -> list[tuple[str, str]]:
-    """(code, own name) of every full language, for the language menu."""
+    """(code, own name) of every language and regional variant, for the language menu."""
     return [(code, TEXTS[code].get("language_name", code)) for code in LANGUAGES]

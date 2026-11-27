@@ -1,5 +1,4 @@
 import datetime as dt
-from dataclasses import replace
 
 from app.diff import diff, to_notify
 from app.models import Kind, Lesson, Status, Transmission
@@ -38,12 +37,6 @@ def test_lessons_beyond_the_previous_window_are_not_added():
     new = [_l("seen", 10), _l("edge", 14), _l("beyond", 18)]
     changes = diff({}, new, dt.date(2030, 1, 7), dt.date(2030, 1, 21), NOW, seen_until=dt.date(2030, 1, 14))
     assert {c.lesson.id for c in changes} == {"seen", "edge"}
-
-
-def test_name_change_is_not_a_schedule_change():
-    old = {"a": _l("a", 7)}
-    new = [replace(_l("a", 7), student_name="Someone", student_age=18)]
-    assert diff(old, new, dt.date(2030, 1, 7), dt.date(2030, 1, 21), NOW) == []
 
 
 def test_to_notify_window():

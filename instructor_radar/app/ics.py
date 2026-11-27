@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from zoneinfo import ZoneInfo
 
 from .i18n import Translator
@@ -37,7 +37,14 @@ def _utc(value: dt.datetime, tz: ZoneInfo) -> str:
     return value.replace(tzinfo=tz).astimezone(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
-def build_calendar(lessons: Iterable[Lesson], t: Translator, tz: ZoneInfo, now: dt.datetime, name: str) -> str:
+def build_calendar(
+    lessons: Iterable[Lesson],
+    t: Translator,
+    tz: ZoneInfo,
+    now: dt.datetime,
+    name: str,
+    who: Callable[[Lesson], str] = lambda lesson: "",
+) -> str:
     stamp = now.astimezone(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
     lines = [
         "BEGIN:VCALENDAR",
@@ -54,7 +61,7 @@ def build_calendar(lessons: Iterable[Lesson], t: Translator, tz: ZoneInfo, now: 
             f"DTSTAMP:{stamp}",
             f"DTSTART:{_utc(lesson.start, tz)}",
             f"DTEND:{_utc(lesson.end, tz)}",
-            f"SUMMARY:{_escape(summary(lesson, t))}",
+            f"SUMMARY:{_escape(summary(lesson, t, who(lesson)))}",
             f"LOCATION:{_escape(lesson.location)}",
             f"DESCRIPTION:{_escape(' · '.join(d for d in description if d))}",
             f"STATUS:{'CANCELLED' if lesson.status == Status.CANCELLED else 'CONFIRMED'}",

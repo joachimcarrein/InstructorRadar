@@ -34,9 +34,8 @@ def test_calendar_structure_and_summary():
 
 
 def test_exam_and_automatic_and_name():
-    lesson = _lesson(kind=Kind.EXAM, transmission=Transmission.AUTOMATIC, sequence="", student_name="Sam Fictief",
-                     student_age=18)
-    ics = build_calendar([lesson], Translator("en"), TZ, NOW, "X")
+    lesson = _lesson(kind=Kind.EXAM, transmission=Transmission.AUTOMATIC, sequence="")
+    ics = build_calendar([lesson], Translator("en"), TZ, NOW, "X", lambda x: "Sam Fictief (18)")
     assert "SUMMARY:Exam – B automatic – Centrum – Sam Fictief (18)" in ics
 
 

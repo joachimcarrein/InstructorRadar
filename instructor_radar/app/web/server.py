@@ -15,9 +15,9 @@ from aiohttp import web
 from .. import __version__
 from ..config import ConfigError
 from ..i18n import Translator, language_names, pick_language
-from ..models import Kind, Lesson, StudentInfo
+from ..models import HistoryEntry, Kind, Lesson, StudentInfo
 from ..notifier import notification_samples
-from ..present import kind_label, licence_label, student_label
+from ..present import kind_label, licence_label
 from ..scheduler import next_run
 from ..settings import NotifyPrefs, SharedSettings
 from ..store import week_start
@@ -119,14 +119,20 @@ def _familiarity(info: StudentInfo | None, lesson: Lesson) -> str:
     return info.familiarity(lesson.start)
 
 
+def _is_this_lesson(h: HistoryEntry, lesson: Lesson, this_start: str) -> bool:
+    """By the planner's id (the exam and its drive back share one); by date and time for rows without one."""
+    if h.event_id:
+        return h.event_id == lesson.id.split("#")[0]
+    return h.date == lesson.start.date() and (h.start == this_start or h.start < this_start < h.end)
+
+
 def _recently_changed(radar: Radar) -> set[str]:
     cutoff = radar.now() - RECENT_CHANGE
     return {c.lesson.id for c in radar.state.changes if c.type != "removed" and c.detected >= cutoff}
 
 
 def _card(lesson: Lesson, radar: Radar, t: Translator, changed: set[str]) -> dict:
-    record = radar.state.students.get(lesson.student_key)
-    familiarity = _familiarity(record.info if record else None, lesson)
+    familiarity = _familiarity(radar.student(lesson), lesson)
     start_h = lesson.start.hour + lesson.start.minute / 60
     end_h = max(start_h + 0.25, (lesson.end - lesson.start).total_seconds() / 3600 + start_h)
     span = DAY_END_HOUR - DAY_START_HOUR
@@ -138,7 +144,7 @@ def _card(lesson: Lesson, radar: Radar, t: Translator, changed: set[str]) -> dic
         "label": kind_label(lesson, t),
         "gear": lesson.transmission.value,
         "gear_label": t(lesson.transmission.value),
-        "student": student_label(lesson, t),
+        "student": radar.who(lesson),
         "familiarity": familiarity,
         "changed": lesson.id in changed,
         "top": f"{top:.2f}",
@@ -209,14 +215,12 @@ async def lesson_detail(request: web.Request) -> web.Response:
     lesson = radar.state.lessons.get(request.match_info["id"])
     if lesson is None:
         raise web.HTTPNotFound()
-    record = radar.state.students.get(lesson.student_key)
-    info = record.info if record else None
+    info = radar.student(lesson)
     history, practice, lesson_total = None, "", ""
     if info is not None:
         this_start = f"{lesson.start:%H:%M}"
         history = [
-            # An exam entry also covers the drive back, which is a separate appointment in the week view.
-            {"entry": h, "current": h.date == lesson.start.date() and (h.start == this_start or h.start < this_start < h.end)}
+            {"entry": h, "current": _is_this_lesson(h, lesson, this_start)}
             for h in sorted(info.history, key=lambda h: (h.date, h.start), reverse=True)
         ]
         done, coming = info.lesson_counts()
@@ -250,7 +254,7 @@ async def changes(request: web.Request) -> web.Response:
                 "when": f"{t.weekdays[ch.lesson.start.weekday()]} {ch.lesson.start:%d/%m %H:%M}–{ch.lesson.end:%H:%M}",
                 "label": kind_label(ch.lesson, t),
                 "licence": licence_label(ch.lesson, t),
-                "student": student_label(ch.lesson, t),
+                "student": radar.who(ch.lesson),
                 "before": (
                     f"{t.weekdays[ch.before.start.weekday()]} {ch.before.start:%d/%m %H:%M}–{ch.before.end:%H:%M}"
                     f" · {ch.before.location}"
