@@ -39,7 +39,7 @@ async def test_names_off_nothing_personal_anywhere(make_radar, caplog):
     everything = await _everything(radar, caplog)
     for secret in SECRETS + NAMES:
         assert secret not in everything, secret
-    assert all(lesson.student_age is None for lesson in radar.state.lessons.values())
+    assert all(r.info.name is None and r.info.age is None for r in radar.state.students.values())
 
 
 async def test_names_on_shows_name_and_age_but_still_no_contact_data(make_radar, caplog):

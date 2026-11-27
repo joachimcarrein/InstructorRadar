@@ -1,5 +1,8 @@
 """Internal model. Deliberately minimal: no phone, address, e-mail, birthdate or other student personal data.
 
+The student's name and age live only in the student record (StudentInfo), never on a lesson: a lesson refers to its
+student by an opaque key, so there is one place to update and one place to strip when an option is switched off.
+
 Providers build these objects and drop everything else before returning, so nothing beyond these fields can reach
 the store, the ICS, the web UI or the logs.
 """
@@ -44,11 +47,9 @@ class Lesson:
     location: str  # human-readable location name (or code when unknown)
     status: Status
     student_key: str  # opaque key (hash), never the planner's own id
-    student_name: str | None = None  # only when include_student_name is on
-    student_age: int | None = None  # only when include_student_age is on
     title: str = ""  # only for appointments without a student (e.g. 'Beschikbaar voor rijlessen')
 
-    # Fields compared to detect a change (the student name/age are display data, not a schedule change).
+    # Fields compared to detect a change.
     COMPARED = ("start", "end", "kind", "licence", "transmission", "sequence", "location", "status", "student_key")
 
     def to_dict(self) -> dict:
@@ -70,16 +71,7 @@ class Lesson:
             location=str(d.get("location", "")),
             status=Status(d.get("status", Status.PLANNED)),
             student_key=str(d.get("student_key", "")),
-            student_name=d.get("student_name"),
-            student_age=d.get("student_age"),
             title=str(d.get("title", "")),
-        )
-
-    def without_personal(self, keep_name: bool, keep_age: bool) -> Lesson:
-        return replace(
-            self,
-            student_name=self.student_name if keep_name else None,
-            student_age=self.student_age if keep_age else None,
         )
 
 
@@ -97,6 +89,7 @@ class HistoryEntry:
     cancel_reason: str = ""
     end: str = ""  # "HH:MM" or ""
     result: str = ""  # exams only: "passed" | "failed" | "" (unknown / not taken yet)
+    event_id: str = ""  # the planner's id of the appointment; equals Lesson.id of the same appointment
 
     @property
     def minutes(self) -> int:
@@ -134,6 +127,7 @@ class HistoryEntry:
             cancel_reason=str(d.get("cancel_reason", "")),
             end=str(d.get("end", "")),
             result=str(d.get("result", "")),
+            event_id=str(d.get("event_id", "")),
         )
 
 
@@ -142,6 +136,16 @@ class StudentInfo:
     key: str
     age: int | None = None  # only when include_student_age is on
     history: list[HistoryEntry] = field(default_factory=list)
+    name: str | None = None  # only when include_student_name is on
+
+    def label(self, show_name: bool, show_age: bool) -> str:
+        """'Name (18)', 'Name' or '' (an age alone says nothing)."""
+        if not (show_name and self.name):
+            return ""
+        return f"{self.name} ({self.age})" if show_age and self.age is not None else self.name
+
+    def without_personal(self, keep_name: bool, keep_age: bool) -> StudentInfo:
+        return replace(self, name=self.name if keep_name else None, age=self.age if keep_age else None)
 
     def _practice(self, measure) -> tuple[int, int]:
         driven = planned = 0

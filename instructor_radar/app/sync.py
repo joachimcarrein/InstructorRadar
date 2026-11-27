@@ -21,7 +21,7 @@ from .diff import Change, diff
 from .ha import ERROR_NOTIFICATION_ID, HomeAssistant
 from .i18n import Translator
 from .ics import build_calendar
-from .models import Lesson
+from .models import Lesson, StudentInfo
 from .notifier import Notifier
 from .providers import (
     Credentials,
@@ -153,7 +153,6 @@ class Radar:
             log.exception("Unexpected error during the fetch")
             return await self._finish_error("Unexpected error during the fetch; see the add-on log.", now)
 
-        lessons = [self._with_age(lesson, students) for lesson in lessons]
         first_run = previous.last_success is None
         self._apply(lessons, students, changes if not first_run else [], window_start, window_end, today)
         self.retry_at = None
@@ -186,18 +185,20 @@ class Radar:
     async def _refresh_students(
         self, session: PlannerSession, lessons: list[Lesson], changes: list[Change], today: dt.date
     ) -> tuple[dict[str, StudentRecord], int]:
-        """Fetch history (and age) for students that are new, changed, or not refreshed today."""
+        """Fetch history (name, age) for students that are new, changed, not refreshed today, or fetched without the
+        name/age that is switched on now."""
         students = {k: v for k, v in self.state.students.items()}
         keys = sorted({lesson.student_key for lesson in lessons if lesson.student_key})
         changed = {c.lesson.student_key for c in changes}
-        want_age = self.settings.include_student_age
+        want_name, want_age = self.settings.include_student_name, self.settings.include_student_age
         todo = [
             k
             for k in keys
             if k not in students
             or students[k].refreshed < today
             or k in changed
-            or (want_age and not students[k].with_age)  # ages switched on after this student was fetched
+            or (want_name and not students[k].with_name)  # names switched on after this student was fetched
+            or (want_age and not students[k].with_age)
         ]
         refreshed = 0
         for key in todo[:MAX_STUDENTS_PER_RUN]:
@@ -209,14 +210,9 @@ class Radar:
                 # One odd student page must not cost the whole schedule.
                 log.warning("Student details skipped: %s", type(exc).__name__)
                 continue
-            students[key] = StudentRecord(info=info, refreshed=today, with_age=want_age)
+            students[key] = StudentRecord(info=info, refreshed=today, with_name=want_name, with_age=want_age)
             refreshed += 1
         return students, refreshed
-
-    def _with_age(self, lesson: Lesson, students: dict[str, StudentRecord]) -> Lesson:
-        if not self.settings.include_student_age or lesson.student_key not in students:
-            return lesson
-        return replace(lesson, student_age=students[lesson.student_key].info.age)
 
     def _apply(
         self,
@@ -266,4 +262,15 @@ class Radar:
     # ------------------------------------------------------------------ outputs
 
     def calendar(self, lang: str) -> str:
-        return build_calendar(self.state.lessons.values(), Translator(lang), self.tz, self.now(), "Instructor Radar")
+        return build_calendar(
+            self.state.lessons.values(), Translator(lang), self.tz, self.now(), "Instructor Radar", self.who
+        )
+
+    def student(self, lesson: Lesson) -> StudentInfo | None:
+        record = self.state.students.get(lesson.student_key) if lesson.student_key else None
+        return record.info if record else None
+
+    def who(self, lesson: Lesson) -> str:
+        """The student label of a lesson ('Name (18)'), following the current name/age settings; '' when off."""
+        info = self.student(lesson)
+        return info.label(self.settings.include_student_name, self.settings.include_student_age) if info else ""

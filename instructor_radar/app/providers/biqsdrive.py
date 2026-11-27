@@ -115,6 +115,7 @@ class BiqsDriveProvider:
 
         session.private["instructor_ids"] = {str(e.get("instructorId")) for e in data if isinstance(e, dict)}
         students: dict[str, str] = session.private.setdefault("students", {})
+        names: dict[str, str] = session.private.setdefault("names", {})
         lessons: list[Lesson] = []
         seen: dict[str, int] = {}
         for raw in data:
@@ -123,6 +124,10 @@ class BiqsDriveProvider:
             lesson = _to_lesson(raw, locations, session, students)
             if lesson is None:
                 continue
+            if lesson.student_key and session.settings.include_student_name:
+                name = str(raw.get("studentName") or "").strip()
+                if name:
+                    names[lesson.student_key] = name
             # Ids are expected to be unique; keep both if not.
             n = seen.get(lesson.id, 0)
             seen[lesson.id] = n + 1
@@ -140,6 +145,8 @@ class BiqsDriveProvider:
         birthdate, unique_id = _student_extract(record)
         del record  # holds personal data; nothing else is used
         age = _age(birthdate, today) if session.settings.include_student_age else None
+        # The name comes from the schedule (fetch_events); only kept when names are on.
+        name = session.private.get("names", {}).get(student_key) if session.settings.include_student_name else None
 
         rows = _parse_json(
             *await _request(
@@ -155,7 +162,7 @@ class BiqsDriveProvider:
             (h for h in (_to_history(r, own, reasons) for r in _merge_exam_time(_rows(rows))) if h is not None),
             key=lambda h: (h.date, h.start),
         )
-        return StudentInfo(key=student_key, age=age, history=history)
+        return StudentInfo(key=student_key, age=age, history=history, name=name)
 
     async def _locations(self, session: PlannerSession) -> dict[str, str]:
         if "locations" not in session.private:
@@ -325,7 +332,7 @@ def _student_key(base_url: str, planner_id: str) -> str:
 
 def _kind(timesheet_code: Any, licence_id: Any) -> Kind:
     code = str(timesheet_code or "").upper()
-    # TODO(verify): LESSON_EXAM seems to be the lesson/drive to the exam; shown as an exam for now.
+    # Verified: LESSON_EXAM is the exam itself, EXAM_TIME the drive back right after it (both exams).
     if code in EXAM_CODES or str(licence_id or "").upper().startswith("EX-"):
         return Kind.EXAM
     if code in LESSON_CODES:
@@ -368,8 +375,6 @@ def _to_lesson(raw: dict, locations: dict[str, str], session: PlannerSession, st
         students[key] = planner_student
     licence, transmission = _licence(raw.get("driverlicenceId"))
     location_code = str(raw.get("location") or "")
-    settings = session.settings
-    name = str(raw.get("studentName") or "").strip() or None
     # Only whitelisted fields are copied. studentPhone, studentPrivatePhone, studentAddress, studentCity, title,
     # originalTitle (contains the phone), description, ... are never read.
     return Lesson(
@@ -383,7 +388,6 @@ def _to_lesson(raw: dict, locations: dict[str, str], session: PlannerSession, st
         location=locations.get(location_code, location_code),
         status=_status(raw),
         student_key=key,
-        student_name=name if settings.include_student_name and key else None,
         # The title of a lesson contains the student's phone: only read it for entries without a student.
         title=_appointment_title(raw) if not key else "",
     )
@@ -505,4 +509,5 @@ def _to_history(row: dict, own_instructor_ids: set[str], reasons: dict[str, str]
         status=status,
         cancel_reason=reason,
         result=_exam_result(row) if kind == Kind.EXAM else "",
+        event_id=str(row.get("event_id") or ""),
     )

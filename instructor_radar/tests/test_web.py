@@ -1,3 +1,4 @@
+import datetime as dt
 import re
 
 from aiohttp.test_utils import TestClient, TestServer
@@ -84,3 +85,19 @@ async def test_language_choice_per_user(make_radar, tmp_path):
         assert (await client.post("/language", data={"language": "xx"}, headers={"X-Requested-With": "fetch"})).status == 400
         assert (await client.post("/language", data={"language": "nl"})).status == 400
     assert await radar.language() == "nl"
+
+
+def test_this_lesson_is_linked_by_the_planner_id():
+    from app.models import HistoryEntry, Kind, Lesson, Status, Transmission
+    from app.web.server import _is_this_lesson
+
+    def lesson(id_, hour):
+        start = dt.datetime(2030, 1, 7, hour)
+        return Lesson(id_, start, start + dt.timedelta(hours=1), Kind.EXAM, "B", Transmission.MANUAL, "", "", Status.PLANNED, "k")
+
+    exam = HistoryEntry(dt.date(2030, 1, 7), "14:00", "", True, Kind.EXAM, "1", Status.PLANNED, end="16:00", event_id="av_1")
+    assert _is_this_lesson(exam, lesson("av_1", 14), "14:00")
+    assert _is_this_lesson(exam, lesson("av_1#1", 15), "15:00")  # the drive back: same planner id
+    assert not _is_this_lesson(exam, lesson("other", 14), "14:00")  # same time, other appointment
+    old = HistoryEntry(dt.date(2030, 1, 7), "14:00", "", True, Kind.LESSON, "1", Status.PLANNED, end="16:00")
+    assert _is_this_lesson(old, lesson("x", 14), "14:00")  # stored before event_id existed: by time

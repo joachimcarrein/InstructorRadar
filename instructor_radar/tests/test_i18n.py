@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from app.i18n import LANGUAGES, TEXTS, Translator, normalize, pick_language
+from app.i18n import LANGUAGES, TEXTS, Translator, language_names, normalize, pick_language
 
 
 def _placeholders(text):
@@ -13,7 +13,10 @@ def _placeholders(text):
 
 def test_english_is_the_reference_and_languages_are_found():
     assert "en" in TEXTS and {"nl", "fr"} <= set(LANGUAGES)
-    assert "nl-BE" in TEXTS and "nl-BE" not in LANGUAGES  # regional variants are not in the menu
+    assert "nl-BE" in LANGUAGES  # regional variants can be chosen too
+    names = dict(language_names())
+    assert names["nl"] == "Nederlands" and names["nl-BE"] == "Nederlands (België)"
+    assert all(names[code] != code for code in LANGUAGES)  # every file has its own name
 
 
 @pytest.mark.parametrize("lang", [code for code in TEXTS if "-" not in code])

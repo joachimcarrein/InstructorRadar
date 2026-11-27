@@ -103,8 +103,8 @@ cancelled lesson, the reason. On a phone the week becomes a list per day that op
 **Changes** lists what changed this week (new, moved, removed), with when it was noticed. Older weeks are removed
 automatically: Instructor Radar keeps the current week and what lies ahead, nothing else.
 
-**Language**: the menu at the top, per Home Assistant user (English, Nederlands, Français). *Automatic* follows your browser or app language
-(Belgian Dutch gets Belgian words). Your notifications use your language; notifications shown in Home Assistant itself use the language of the
+**Language**: the menu at the top, per Home Assistant user (English, Nederlands, Nederlands (België), Français). *Automatic* follows your
+browser or app language (Belgian Dutch gets Belgian words). Your notifications use your language; notifications shown in Home Assistant itself use the language of the
 last person who opened the app, or Home Assistant's language before anyone has.
 
 ### Calendar entity in Home Assistant (optional)

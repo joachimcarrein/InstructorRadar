@@ -137,11 +137,12 @@ async def test_switching_ages_on_fetches_students_again_the_same_day(make_radar)
 
     radar, planner = await make_radar(include_student_name=True)
     await radar.run()
-    assert all(x.student_age is None for x in radar.state.lessons.values())
+    assert all(r.info.age is None for r in radar.state.students.values())
     radar.update_settings(replace(radar.settings, include_student_age=True))
     radar.test_clock["now"] += dt.timedelta(hours=1)
     await radar.run()
-    assert {x.student_age for x in radar.state.lessons.values()} == {17}
+    assert {r.info.age for r in radar.state.students.values()} == {17}
+    assert radar.who(radar.state.lessons["9001"]) == "Testleerling Een (17)"
     # Fetched with ages now: the next run the same day leaves the students alone again.
     planner.calls.clear()
     radar.test_clock["now"] += dt.timedelta(hours=1)

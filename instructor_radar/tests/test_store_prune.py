@@ -9,7 +9,7 @@ from .conftest import NOW
 
 def _l(id_, day, key="s1"):
     return Lesson(id_, dt.datetime(2030, 1, day, 9), dt.datetime(2030, 1, day, 11), Kind.LESSON, "B",
-                  Transmission.MANUAL, "1-2", "Centrum", Status.PLANNED, key, "Name", 18)
+                  Transmission.MANUAL, "1-2", "Centrum", Status.PLANNED, key)
 
 
 def test_prune_keeps_current_week_only():
@@ -24,25 +24,50 @@ def test_prune_keeps_current_week_only():
     assert [c.lesson.id for c in state.changes] == ["y"]
 
 
+def test_prune_keeps_the_student_of_a_removed_lesson():
+    state = State(
+        lessons={"mon": _l("mon", 7)},
+        students={k: StudentRecord(StudentInfo(k, name="X"), dt.date(2030, 1, 7)) for k in ("s1", "gone")},
+        changes=[Change("removed", _l("r", 8, "gone"), None, NOW)],
+    )
+    prune(state, dt.date(2030, 1, 9))
+    assert set(state.students) == {"s1", "gone"}  # 'Removed: ... – X' can still say who
+
+
 def test_apply_privacy_strips_names_and_ages():
-    state = State(lessons={"a": _l("a", 7)},
-                  students={"s1": StudentRecord(StudentInfo("s1", age=18), dt.date(2030, 1, 7))})
+    record = StudentRecord(StudentInfo("s1", age=18, name="Name"), dt.date(2030, 1, 7), with_name=True, with_age=True)
+    state = State(lessons={"a": _l("a", 7)}, students={"s1": record})
+    apply_privacy(state, keep_name=True, keep_age=False)
+    assert state.students["s1"].info.name == "Name" and state.students["s1"].info.age is None
+    assert record.with_name and not record.with_age
     apply_privacy(state, keep_name=False, keep_age=False)
-    assert state.lessons["a"].student_name is None and state.lessons["a"].student_age is None
-    assert state.students["s1"].info.age is None
+    assert state.students["s1"].info.name is None and not record.with_name
+
+
+def test_names_on_old_lessons_move_to_the_student_record():
+    # State written by 2026.11.4: name and age on every lesson, the record without a name.
+    old = State(lessons={"a": _l("a", 7)}, students={"s1": StudentRecord(StudentInfo("s1", age=18), dt.date(2030, 1, 7))})
+    d = old.to_dict()
+    d["lessons"][0].update(student_name="Old Name", student_age=18)
+    for v in d["students"].values():
+        del v["name"], v["with_name"], v["with_age"]
+    loaded = State.from_dict(d)
+    assert loaded.students["s1"].info.name == "Old Name" and loaded.students["s1"].with_name
+    assert not loaded.students["s1"].with_age  # fetched again once when ages are on
+    assert "student_name" not in loaded.lessons["a"].to_dict()
 
 
 def test_roundtrip(tmp_path):
     store = Store(tmp_path / "state.json")
     history = [HistoryEntry(dt.date(2029, 12, 1), "09:00", "X", True, Kind.LESSON, "1-2", Status.CANCELLED, "Ziek")]
     state = State(lessons={"a": _l("a", 7)},
-                  students={"s1": StudentRecord(StudentInfo("s1", 18, history), dt.date(2030, 1, 7))},
+                  students={"s1": StudentRecord(StudentInfo("s1", 18, history, "Name"), dt.date(2030, 1, 7), True)},
                   changes=[Change("changed", _l("a", 7), _l("a", 8), NOW, ("start",))],
                   window_end=dt.date(2030, 1, 21))
     store.save(state)
     loaded = store.load()
     assert loaded.lessons == state.lessons
-    assert loaded.students["s1"].info.history == history
+    assert loaded.students["s1"].info == state.students["s1"].info and loaded.students["s1"].with_name
     assert loaded.changes[0].before.start.day == 8
     assert loaded.window_end == dt.date(2030, 1, 21)
 
