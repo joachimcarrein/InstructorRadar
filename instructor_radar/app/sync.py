@@ -144,7 +144,7 @@ class Radar:
         except PlannerBusy as exc:
             return await self._finish_busy(exc, now, reason, previous)
         except ProviderError as exc:
-            return await self._finish_error(exc.message, now, notify=exc.notify)
+            return await self._finish_error(exc.message, now)
         except TimeoutError:
             return await self._finish_error("The planner did not answer in time; trying again at the next fetch time.", now)
         except aiohttp.ClientError as exc:
@@ -170,6 +170,7 @@ class Radar:
             time.monotonic() - started,
         )
         if previous.status == "error":
+            # Versions up to 2026.11.4 raised a notification for problems; clear one that may still be there.
             await self.ha.dismiss_notification(ERROR_NOTIFICATION_ID)
         if not first_run:
             await self._notify_changes(changes, now)
@@ -238,14 +239,12 @@ class Radar:
         self.store.save(self.state)
         return self.state.run
 
-    async def _finish_error(self, message: str, now: dt.datetime, notify: bool = True) -> RunInfo:
+    async def _finish_error(self, message: str, now: dt.datetime) -> RunInfo:
+        """Problems go to the log and the status banner in the app; no notification in Home Assistant."""
         log.error("Fetch failed: %s", message)
         self.retry_at = None  # no retry before the next scheduled time (avoid locking the account)
         self.state.run = replace(self.state.run, at=now, status="error", message=message)
         self.store.save(self.state)
-        if notify:
-            t = Translator(await self.language())
-            await self.ha.persistent_notification(t("error_title"), message, ERROR_NOTIFICATION_ID)
         return self.state.run
 
     async def _notify_changes(self, changes: list[Change], now: dt.datetime) -> None:

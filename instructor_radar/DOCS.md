@@ -35,7 +35,8 @@ fetch logs in, reads what it needs, and **logs out right away** (usually within 
 - **When all sessions are in use**, Instructor Radar does not fight for one: it keeps the schedule it already has,
   shows *Planner busy* and tries once more after 15 minutes, then waits for the next fetch time.
 - **Fetch now** (the button, or `hassio.addon_stdin`) is limited to once every 2 minutes.
-- A **refused login** (wrong password, 2FA, captcha) raises a notification in Home Assistant and is **not retried**
+- A **refused login** (wrong password, 2FA, captcha) is written to the add-on log and shown in the app's status
+  bar (no notification) and is **not retried**
   until the next fetch time, so the account cannot get locked by repeated attempts.
 
 ## Add-on configuration
