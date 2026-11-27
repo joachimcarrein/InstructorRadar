@@ -133,8 +133,9 @@ async def test_settings_page_and_saving(make_radar):
     async with TestClient(TestServer(ui_app(radar, addon_mode=False))) as client:
         html = await (await client.get("/settings", headers={"Accept-Language": "en"})).text()
         assert "For everyone" in html and "My notifications" in html
-        assert 'value="notify.mobile_app_dev_phone" checked' in html  # phones suggested before the first save
-        assert 'value="notify.persistent_notification">' in html
+        # Nothing ticked by default: HA lists every user's phones.
+        assert 'value="notify.mobile_app_dev_phone">' in html and 'value="notify.mobile_app_dev_tablet">' in html
+        assert " checked> notify." not in html
 
         assert (await client.post("/settings/shared", data={"days_ahead": "7"})).status == 400  # no AJAX header
         resp = await client.post("/settings/shared", headers=AJAX,

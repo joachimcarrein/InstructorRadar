@@ -69,8 +69,8 @@ fetch.
 
 Each Home Assistant user chooses their own, like in MedStock:
 
-- **Devices**: the `notify.*` services of Home Assistant. The phones of the Companion app are listed first and are
-  ticked until you save once.
+- **Devices**: the `notify.*` services of Home Assistant. The phones of the Companion app are listed first. **None is
+  ticked by default**: Home Assistant lists the phones of every user, so tick only your own.
 - **Schedule changes** (on by default): new, moved or cancelled lessons from today up to *N* days ahead (default 2 =
   today and tomorrow), noticed at a fetch.
 - **Reminder before each lesson** (off by default): *N* minutes before the start (default 30).

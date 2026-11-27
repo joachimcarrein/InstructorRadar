@@ -280,10 +280,9 @@ async def settings_page(request: web.Request) -> web.Response:
     user = _user_id(request)
     prefs = radar.users.notify(user) if radar.users and user else NotifyPrefs()
     services = await radar.ha.notify_services()
-    if prefs.devices is None:  # never saved: suggest the phones
-        selected = {s for s in services or [] if s.startswith("notify.mobile_app_")}
-    else:
-        selected = set(prefs.devices)
+    # Nothing is ticked until the user chooses: Home Assistant lists every user's phones, and a careless Save must
+    # not subscribe them all.
+    selected = set(prefs.devices or ())
     return _render(
         "settings.html",
         **c,
