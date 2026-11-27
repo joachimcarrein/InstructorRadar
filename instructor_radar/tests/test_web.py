@@ -27,7 +27,13 @@ async def test_lesson_detail_and_404(make_radar):
         resp = await client.get("/lesson/9001", headers={"Accept-Language": "en"})
         html = await resp.text()
         assert resp.status == 200
-        assert "Lessons so far" in html and "Andere Collega" in html and "Cancelled: Ziek" in html
+        assert "Lessons" in html and "Andere Collega" in html and "Cancelled: Ziek" in html
+        # Future lessons are listed too and the opened lesson is marked; hours from the history:
+        # done 02/12 (2:00) + 16/12 (no end = 0:00); planned 07/01 09:00-11:00 is this lesson (2:00).
+        assert "this lesson" in html
+        assert "Driving hours" in html and "4:00 (2:00 driven, 2:00 planned)" in html
+        # Lessons 1-2 and 3-4 done (3-4 on 09/12 was cancelled, 16/12 counts), 11-12 planned.
+        assert "Number of lessons" in html and "6 (4 driven, 2 planned)" in html
         assert (await client.get("/lesson/nope")).status == 404
 
 

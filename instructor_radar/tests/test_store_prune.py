@@ -63,3 +63,23 @@ def test_familiarity():
     assert StudentInfo("k", history=[h(1, False)]).familiarity(lesson_day) == "new"
     assert StudentInfo("k", history=[h(1, False), h(2, True)]).familiarity(lesson_day) == ""
     assert StudentInfo("k", history=[h(1, True, Status.CANCELLED), h(2, False)]).familiarity(lesson_day) == "new"
+
+
+def test_practice_minutes():
+    def h(status, start="09:00", end="11:00", kind=Kind.LESSON):
+        return HistoryEntry(dt.date(2029, 12, 1), start, "X", True, kind, "", status, end=end)
+
+    info = StudentInfo("k", history=[h(Status.DONE), h(Status.DONE, "14:30", "15:20"), h(Status.CANCELLED),
+                                     h(Status.PLANNED), h(Status.DONE, kind=Kind.EXAM), h(Status.DONE, end="")])
+    assert info.practice_minutes() == (170, 120)
+    assert h(Status.DONE, "10:00", "09:00").minutes == 0
+
+
+def test_lesson_counts_in_units():
+    def h(status, seq, kind=Kind.LESSON):
+        return HistoryEntry(dt.date(2029, 12, 1), "09:00", "X", True, kind, seq, status)
+
+    info = StudentInfo("k", history=[h(Status.DONE, "1-2"), h(Status.DONE, "3"), h(Status.CANCELLED, "4-5"),
+                                     h(Status.PLANNED, "4-5"), h(Status.DONE, "", Kind.EXAM), h(Status.DONE, "")])
+    assert info.lesson_counts() == (4, 2)
+    assert h(Status.DONE, "12-11").units == 1

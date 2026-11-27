@@ -106,6 +106,10 @@ def _render(name: str, **ctx) -> web.Response:
 # ---------------------------------------------------------------------- view helpers
 
 
+def _hours(minutes: int) -> str:
+    return f"{minutes // 60}:{minutes % 60:02d}"
+
+
 def _familiarity(info: StudentInfo | None, lesson: Lesson) -> str:
     if info is None or lesson.kind != Kind.LESSON:
         return ""
@@ -203,14 +207,28 @@ async def lesson_detail(request: web.Request) -> web.Response:
         raise web.HTTPNotFound()
     record = radar.state.students.get(lesson.student_key)
     info = record.info if record else None
-    history = [h for h in info.history if h.date < lesson.start.date()] if info else None
+    history, practice, lesson_total = None, "", ""
+    if info is not None:
+        this_start = f"{lesson.start:%H:%M}"
+        history = [
+            {"entry": h, "current": h.date == lesson.start.date() and h.start == this_start}
+            for h in sorted(info.history, key=lambda h: (h.date, h.start), reverse=True)
+        ]
+        done, coming = info.lesson_counts()
+        if done or coming:
+            lesson_total = t("practice_detail", total=done + coming, driven=done, planned=coming)
+        driven, planned = info.practice_minutes()
+        if driven or planned:
+            practice = t("practice_detail", total=_hours(driven + planned), driven=_hours(driven), planned=_hours(planned))
     return _render(
         "lesson.html",
         **c,
         lesson=lesson,
         card=_card(lesson, radar, t, _recently_changed(radar)),
         licence=licence_label(lesson, t),
-        history=list(reversed(history)) if history is not None else None,
+        history=history,
+        practice=practice,
+        lesson_total=lesson_total,
         weekday=t.weekdays[lesson.start.weekday()],
     )
 

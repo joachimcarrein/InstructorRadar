@@ -93,6 +93,25 @@ class HistoryEntry:
     sequence: str
     status: Status
     cancel_reason: str = ""
+    end: str = ""  # "HH:MM" or ""
+
+    @property
+    def minutes(self) -> int:
+        """Duration in minutes (0 when start or end is unknown)."""
+        try:
+            sh, sm = (int(x) for x in self.start.split(":")[:2])
+            eh, em = (int(x) for x in self.end.split(":")[:2])
+        except ValueError:
+            return 0
+        return max(0, (eh * 60 + em) - (sh * 60 + sm))
+
+    @property
+    def units(self) -> int:
+        """Lesson units of this entry: '11-12' = 2, '23' = 1, unnumbered = 1."""
+        numbers = [int(x) for x in self.sequence.split("-") if x.isdigit()]
+        if len(numbers) == 2 and 0 <= numbers[1] - numbers[0] < 8:
+            return numbers[1] - numbers[0] + 1
+        return 1
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -110,6 +129,7 @@ class HistoryEntry:
             sequence=str(d.get("sequence", "")),
             status=Status(d.get("status", Status.DONE)),
             cancel_reason=str(d.get("cancel_reason", "")),
+            end=str(d.get("end", "")),
         )
 
 
@@ -118,6 +138,25 @@ class StudentInfo:
     key: str
     age: int | None = None  # only when include_student_age is on
     history: list[HistoryEntry] = field(default_factory=list)
+
+    def _practice(self, measure) -> tuple[int, int]:
+        driven = planned = 0
+        for h in self.history:
+            if h.kind != Kind.LESSON:
+                continue
+            if h.status == Status.DONE:
+                driven += measure(h)
+            elif h.status in (Status.PLANNED, Status.CONFIRMED):
+                planned += measure(h)
+        return driven, planned
+
+    def practice_minutes(self) -> tuple[int, int]:
+        """(driven, planned) minutes of practical lessons; exams, theory and cancelled lessons do not count."""
+        return self._practice(lambda h: h.minutes)
+
+    def lesson_counts(self) -> tuple[int, int]:
+        """(driven, planned) number of practical lessons, counted in lesson units ('11-12' = 2)."""
+        return self._practice(lambda h: h.units)
 
     def familiarity(self, before: dt.date) -> str:
         """'first' = no past lesson at all, 'new' = past lessons but never with me, '' = I had them before."""

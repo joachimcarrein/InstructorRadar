@@ -66,6 +66,7 @@ class DemoProvider:
                 HistoryEntry(
                     date=today - dt.timedelta(days=7 * (mine + other - i) + 3),
                     start="09:00",
+                    end="11:00",
                     instructor="Jij" if with_me else "Collega Instructeur",
                     mine=with_me,
                     kind=Kind.LESSON,
@@ -74,6 +75,12 @@ class DemoProvider:
                     cancel_reason="Ziek" if i == 1 else "",
                 )
             )
+        history.append(
+            HistoryEntry(
+                date=today + dt.timedelta(days=9), start="13:00", end="15:00", instructor="Jij", mine=True,
+                kind=Kind.LESSON, sequence=f"{2 * (mine + other) + 3}-{2 * (mine + other) + 4}", status=Status.PLANNED,
+            )
+        )
         return StudentInfo(
             key=student_key, age=age if session.settings.include_student_age else None, history=history
         )

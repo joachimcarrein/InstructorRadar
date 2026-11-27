@@ -34,7 +34,7 @@
   "location": "Lieu",
   "time": "Heure",
   "licence": "Permis",
-  "history": "Leçons jusqu'ici",
+  "history": "Leçons",
   "history_empty": "Pas encore de leçons.",
   "history_unavailable": "Historique pas encore récupéré.",
   "with_you": "vous",
@@ -55,5 +55,9 @@
   "weekdays": "lu,ma,me,je,ve,sa,di",
   "language": "Langue",
   "language_auto": "Automatique",
-  "language_name": "Français"
+  "language_name": "Français",
+  "practice_hours": "Heures de pratique",
+  "practice_detail": "{total} ({driven} effectuées, {planned} prévues)",
+  "this_lesson": "cette leçon",
+  "lesson_total": "Nombre de leçons"
 }

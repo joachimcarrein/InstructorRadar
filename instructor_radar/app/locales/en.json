@@ -34,7 +34,7 @@
   "location": "Location",
   "time": "Time",
   "licence": "Licence",
-  "history": "Lessons so far",
+  "history": "Lessons",
   "history_empty": "No earlier lessons.",
   "history_unavailable": "History not fetched yet.",
   "with_you": "you",
@@ -55,5 +55,9 @@
   "weekdays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
   "language": "Language",
   "language_auto": "Automatic",
-  "language_name": "English"
+  "language_name": "English",
+  "practice_hours": "Driving hours",
+  "practice_detail": "{total} ({driven} driven, {planned} planned)",
+  "this_lesson": "this lesson",
+  "lesson_total": "Number of lessons"
 }

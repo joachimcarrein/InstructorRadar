@@ -34,7 +34,7 @@
   "location": "Locatie",
   "time": "Tijd",
   "licence": "Rijbewijs",
-  "history": "Lessen tot nu",
+  "history": "Lessen",
   "history_empty": "Nog geen eerdere lessen.",
   "history_unavailable": "Geschiedenis nog niet opgehaald.",
   "with_you": "jij",
@@ -55,5 +55,9 @@
   "weekdays": "ma,di,wo,do,vr,za,zo",
   "language": "Taal",
   "language_auto": "Automatisch",
-  "language_name": "Nederlands"
+  "language_name": "Nederlands",
+  "practice_hours": "Uren praktijk",
+  "practice_detail": "{total} ({driven} gereden, {planned} gepland)",
+  "this_lesson": "deze les",
+  "lesson_total": "Aantal lessen"
 }

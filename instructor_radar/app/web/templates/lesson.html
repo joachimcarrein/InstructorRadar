@@ -8,6 +8,8 @@
     <dt>{{ t("licence") }}</dt><dd>{{ licence }}</dd>
     {% if lesson.location %}<dt>{{ t("location") }}</dt><dd>{{ lesson.location }}</dd>{% endif %}
     {% if card.student %}<dt>{{ t("student") }}</dt><dd>{{ card.student }}</dd>{% endif %}
+    {% if lesson_total %}<dt>{{ t("lesson_total") }}</dt><dd>{{ lesson_total }}</dd>{% endif %}
+    {% if practice %}<dt>{{ t("practice_hours") }}</dt><dd>{{ practice }}</dd>{% endif %}
   </dl>
   <p class="c-badges">
     {% if card.familiarity == 'first' %}<span class="badge first">{{ t("first_lesson") }}</span>{% endif %}
@@ -22,11 +24,13 @@
   <p class="muted">{{ t("history_empty") }}</p>
   {% else %}
   <ol class="history">
-    {% for h in history %}
-    <li class="h-{{ h.status.value }}{{ ' mine' if h.mine }}">
+    {% for item in history %}
+    {% set h = item.entry %}
+    <li class="h-{{ h.status.value }}{{ ' mine' if h.mine }}{{ ' current' if item.current }}">
       <span class="h-date">{{ t.weekdays[h.date.weekday()] }} {{ h.date.strftime("%d/%m/%y") }}{% if h.start %} {{ h.start }}{% endif %}</span>
       <span class="h-who">{{ t("with_you") if h.mine else h.instructor }}</span>
       {% if h.kind.value == 'exam' %}<span class="h-kind">{{ t("exam") }}</span>{% elif h.sequence %}<span class="h-kind">{{ t("lesson", sequence=h.sequence) }}</span>{% endif %}
+      {% if item.current %}<span class="badge cur">{{ t("this_lesson") }}</span>{% elif h.status.value in ('planned', 'confirmed') %}<span class="h-planned">{{ t("planned") }}</span>{% endif %}
       {% if h.status.value == 'cancelled' %}<span class="h-cancel">{{ t("cancelled") }}{% if h.cancel_reason %}: {{ h.cancel_reason }}{% endif %}</span>{% endif %}
     </li>
     {% endfor %}
