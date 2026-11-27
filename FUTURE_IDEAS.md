@@ -40,5 +40,6 @@ Not planned yet; open an issue to discuss one.
 - **More planners** as provider modules. We have no account on any other planner, so we cannot see how they work:
   see [issue #10](https://github.com/joachimcarrein/InstructorRadar/issues/10) for what a provider needs and a sample
   prompt an instructor can give an AI agent to document their planner (read-only, personal data redacted).
-- Verify on the real planner and remove the `TODO(verify)` markers in `providers/biqsdrive.py` (session-limit
-  behaviour, `?e=` codes, `statusConfirmed`, history `event_status` codes).
+- Planner session limit: learn from the log (`All N planner sessions were already in use at login`) whether
+  biqsDRIVE refuses a login when all seats are taken or ends the oldest session, and adjust `providers/biqsdrive.py`.
+  Not tested on purpose: it would lock out or log out the instructor.

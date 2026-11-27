@@ -5,6 +5,8 @@
 - Problems (refused login, captcha, unexpected planner answer, planner unreachable) no longer raise a notification
   in Home Assistant: they are written to the add-on log and shown in the status bar of the app. A notification
   left by an older version is removed at the next successful fetch.
+- Lessons the planner books **onder voorbehoud** (provisionally) appear as *tentative* in the calendar feed. They
+  used to be marked as confirmed: the planner's flag means the opposite of its name.
 
 ## 2026.11.5
 

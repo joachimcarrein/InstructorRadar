@@ -10,6 +10,8 @@ from .i18n import Translator
 from .models import Lesson, Status
 from .present import kind_label, licence_label, summary
 
+_ICS_STATUS = {Status.CANCELLED: "CANCELLED", Status.TENTATIVE: "TENTATIVE"}
+
 
 def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\r", "").replace("\n", "\\n")
@@ -64,7 +66,7 @@ def build_calendar(
             f"SUMMARY:{_escape(summary(lesson, t, who(lesson)))}",
             f"LOCATION:{_escape(lesson.location)}",
             f"DESCRIPTION:{_escape(' · '.join(d for d in description if d))}",
-            f"STATUS:{'CANCELLED' if lesson.status == Status.CANCELLED else 'CONFIRMED'}",
+            f"STATUS:{_ICS_STATUS.get(lesson.status, 'CONFIRMED')}",
             "END:VEVENT",
         ]
     lines.append("END:VCALENDAR")

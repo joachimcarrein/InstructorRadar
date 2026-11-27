@@ -55,3 +55,16 @@ def test_folding_keeps_lines_short_and_utf8_intact():
 def test_empty_calendar_is_valid():
     ics = build_calendar([], Translator("en"), TZ, NOW, "X")
     assert "BEGIN:VEVENT" not in ics and "END:VCALENDAR" in ics
+
+
+def test_status_cancelled_and_tentative():
+    ics = build_calendar(
+        [_lesson(id="a"), _lesson(id="b", status=Status.CANCELLED), _lesson(id="c", status=Status.TENTATIVE)],
+        Translator("en"), TZ, NOW, "X",
+    )
+    assert ics.count("STATUS:CONFIRMED") == 1 and "STATUS:CANCELLED" in ics and "STATUS:TENTATIVE" in ics
+
+
+def test_old_stored_confirmed_status_reads_as_tentative():
+    assert Status("confirmed") == Status.TENTATIVE
+    assert Lesson.from_dict({**_lesson().to_dict(), "status": "confirmed"}).status == Status.TENTATIVE
