@@ -1,0 +1,20 @@
+[
+  {"id": "9001", "UniqueId": "5001", "start": "2030-01-07 09:00:00", "end": "2030-01-07 11:00:00",
+   "instructorId": "IX", "instructorName": "Fictieve Instructeur", "driverlicenceId": "B", "driverlicenceName": "Rijbewijs B",
+   "lessonSequence": "Les: 11 - 12", "location": "01", "studentId": "01|0001|2030", "studentName": "Testleerling Een",
+   "studentPhone": "0499 11 22 33", "studentPrivatePhone": "0499112233", "studentAddress": "Voorbeeldstraat 1",
+   "studentCity": "Fictiefstad", "timesheetCode": "LESSON", "statusConfirmed": "0",
+   "title": "11|B|Testleerling Een|0499112233|Les: 11 - 12| ( Centrum )", "originalTitle": "11|B|Testleerling Een|0499112233",
+   "description": null, "rendering": null},
+  {"id": "9002", "UniqueId": "5002", "start": "2030-01-08 13:00:00", "end": "2030-01-08 15:00:00",
+   "instructorId": "IX", "instructorName": "Fictieve Instructeur", "driverlicenceId": "B-AUTO", "driverlicenceName": "Rijbewijs B automaat",
+   "lessonSequence": "Les: 1 - 2", "location": "02", "studentId": "01|0002|2030", "studentName": "Testleerling Twee",
+   "studentPhone": "0477 99 88 77", "studentPrivatePhone": "0477998877", "studentAddress": "Proefweg 22",
+   "studentCity": "Nergensdorp", "timesheetCode": "LESSON", "statusConfirmed": "1",
+   "title": "x|0477998877", "originalTitle": "x|0477998877"},
+  {"id": "9003", "UniqueId": "5003", "start": "2030-01-10 10:00:00", "end": "2030-01-10 11:00:00",
+   "instructorId": "IX", "instructorName": "Fictieve Instructeur", "driverlicenceId": "EX-B-AUTO", "driverlicenceName": "Examen B automaat",
+   "lessonSequence": "Les: 23", "location": "01", "studentId": "01|0002|2030", "studentName": "Testleerling Twee",
+   "studentPhone": "0477 99 88 77", "studentAddress": "Proefweg 22", "timesheetCode": "EXAM_TIME", "statusConfirmed": "0"},
+  {"id": "bg1", "start": "2030-01-07 00:00:00", "end": "2030-01-08 00:00:00", "rendering": "background"}
+]

@@ -1,0 +1,36 @@
+<div class="detail gear-{{ card.gear }}{{ ' exam' if card.exam }}">
+  <header>
+    <h2>{{ card.label }}</h2>
+    <button type="button" class="close" data-close aria-label="{{ t('close') }}">×</button>
+  </header>
+  <dl>
+    <dt>{{ t("time") }}</dt><dd>{{ weekday }} {{ lesson.start.strftime("%d/%m") }} · {{ card.time }}</dd>
+    <dt>{{ t("licence") }}</dt><dd>{{ licence }}</dd>
+    {% if lesson.location %}<dt>{{ t("location") }}</dt><dd>{{ lesson.location }}</dd>{% endif %}
+    {% if card.student %}<dt>{{ t("student") }}</dt><dd>{{ card.student }}</dd>{% endif %}
+  </dl>
+  <p class="c-badges">
+    {% if card.familiarity == 'first' %}<span class="badge first">{{ t("first_lesson") }}</span>{% endif %}
+    {% if card.familiarity == 'new' %}<span class="badge new">{{ t("new_student") }}</span>{% endif %}
+    {% if card.changed %}<span class="badge chg">{{ t("changed_badge") }}</span>{% endif %}
+  </p>
+  {% if lesson.student_key %}
+  <h3>{{ t("history") }}</h3>
+  {% if history is none %}
+  <p class="muted">{{ t("history_unavailable") }}</p>
+  {% elif not history %}
+  <p class="muted">{{ t("history_empty") }}</p>
+  {% else %}
+  <ol class="history">
+    {% for h in history %}
+    <li class="h-{{ h.status.value }}{{ ' mine' if h.mine }}">
+      <span class="h-date">{{ t.weekdays[h.date.weekday()] }} {{ h.date.strftime("%d/%m/%y") }}{% if h.start %} {{ h.start }}{% endif %}</span>
+      <span class="h-who">{{ t("with_you") if h.mine else h.instructor }}</span>
+      {% if h.kind.value == 'exam' %}<span class="h-kind">{{ t("exam") }}</span>{% elif h.sequence %}<span class="h-kind">{{ t("lesson", sequence=h.sequence) }}</span>{% endif %}
+      {% if h.status.value == 'cancelled' %}<span class="h-cancel">{{ t("cancelled") }}{% if h.cancel_reason %}: {{ h.cancel_reason }}{% endif %}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+  {% endif %}
+</div>

@@ -1,0 +1,129 @@
+"""Internal model. Deliberately minimal: no phone, address, e-mail, birthdate or other student personal data.
+
+Providers build these objects and drop everything else before returning, so nothing beyond these fields can reach
+the store, the ICS, the web UI or the logs.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+from dataclasses import asdict, dataclass, field, replace
+from enum import StrEnum
+
+
+class Kind(StrEnum):
+    LESSON = "lesson"
+    EXAM = "exam"
+    OTHER = "other"
+
+
+class Transmission(StrEnum):
+    MANUAL = "manual"
+    AUTOMATIC = "automatic"
+    UNKNOWN = "unknown"
+
+
+class Status(StrEnum):
+    PLANNED = "planned"
+    CONFIRMED = "confirmed"
+    DONE = "done"
+    CANCELLED = "cancelled"
+
+
+@dataclass(frozen=True)
+class Lesson:
+    """One appointment in the instructor's own schedule. Times are naive local time (the planner's time zone)."""
+
+    id: str
+    start: dt.datetime
+    end: dt.datetime
+    kind: Kind
+    licence: str  # e.g. "B"
+    transmission: Transmission
+    sequence: str  # e.g. "11-12", "23", or "" when not numbered
+    location: str  # human-readable location name (or code when unknown)
+    status: Status
+    student_key: str  # opaque key (hash), never the planner's own id
+    student_name: str | None = None  # only when include_student_name is on
+    student_age: int | None = None  # only when include_student_age is on
+
+    # Fields compared to detect a change (the student name/age are display data, not a schedule change).
+    COMPARED = ("start", "end", "kind", "licence", "transmission", "sequence", "location", "status", "student_key")
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d["start"] = self.start.isoformat(timespec="minutes")
+        d["end"] = self.end.isoformat(timespec="minutes")
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> Lesson:
+        return cls(
+            id=str(d["id"]),
+            start=dt.datetime.fromisoformat(d["start"]),
+            end=dt.datetime.fromisoformat(d["end"]),
+            kind=Kind(d.get("kind", Kind.OTHER)),
+            licence=str(d.get("licence", "")),
+            transmission=Transmission(d.get("transmission", Transmission.UNKNOWN)),
+            sequence=str(d.get("sequence", "")),
+            location=str(d.get("location", "")),
+            status=Status(d.get("status", Status.PLANNED)),
+            student_key=str(d.get("student_key", "")),
+            student_name=d.get("student_name"),
+            student_age=d.get("student_age"),
+        )
+
+    def without_personal(self, keep_name: bool, keep_age: bool) -> Lesson:
+        return replace(
+            self,
+            student_name=self.student_name if keep_name else None,
+            student_age=self.student_age if keep_age else None,
+        )
+
+
+@dataclass(frozen=True)
+class HistoryEntry:
+    """One past or planned lesson of a student (with any instructor)."""
+
+    date: dt.date
+    start: str  # "HH:MM" or ""
+    instructor: str  # instructor's display name as the planner shows it
+    mine: bool  # True when it was (or is) with the instructor whose account is used
+    kind: Kind
+    sequence: str
+    status: Status
+    cancel_reason: str = ""
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d["date"] = self.date.isoformat()
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> HistoryEntry:
+        return cls(
+            date=dt.date.fromisoformat(d["date"]),
+            start=str(d.get("start", "")),
+            instructor=str(d.get("instructor", "")),
+            mine=bool(d.get("mine", False)),
+            kind=Kind(d.get("kind", Kind.OTHER)),
+            sequence=str(d.get("sequence", "")),
+            status=Status(d.get("status", Status.DONE)),
+            cancel_reason=str(d.get("cancel_reason", "")),
+        )
+
+
+@dataclass(frozen=True)
+class StudentInfo:
+    key: str
+    age: int | None = None  # only when include_student_age is on
+    history: list[HistoryEntry] = field(default_factory=list)
+
+    def familiarity(self, before: dt.date) -> str:
+        """'first' = no past lesson at all, 'new' = past lessons but never with me, '' = I had them before."""
+        past = [h for h in self.history if h.date < before and h.status == Status.DONE and h.kind == Kind.LESSON]
+        if not past:
+            return "first"
+        if not any(h.mine for h in past):
+            return "new"
+        return ""

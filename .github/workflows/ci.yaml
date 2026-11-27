@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install
+        working-directory: instructor_radar
+        run: pip install -r requirements-dev.txt
+      - name: Lint
+        working-directory: instructor_radar
+        run: ruff check .
+      - name: Test
+        working-directory: instructor_radar
+        run: pytest -q
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build image (same context as the Supervisor)
+        run: docker build -t instructor_radar instructor_radar/
+      - name: Load the AppArmor profile (as the Supervisor does on Home Assistant OS)
+        run: |
+          sudo apparmor_parser -r instructor_radar/apparmor.txt
+          sudo aa-status | grep -w instructor_radar
+      - name: Smoke test (confined by the AppArmor profile)
+        run: |
+          # Root-owned like /data on Home Assistant.
+          sudo mkdir -p "$RUNNER_TEMP/data" && sudo chown root:root "$RUNNER_TEMP/data" && sudo chmod 755 "$RUNNER_TEMP/data"
+          docker run -d --init --name ir --security-opt apparmor=instructor_radar -p 8099:8099 -p 8100:8100 \
+            -v "$RUNNER_TEMP/data:/data" -e TZ=Europe/Brussels -e INSTRUCTOR_RADAR_DATA_DIR=/data instructor_radar --demo
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8099/healthz && break
+            sleep 1
+          done
+          docker logs ir
+          docker logs ir 2>&1 | grep -q "Europe/Brussels"
+          docker logs ir 2>&1 | grep -q "Fetch (startup) ok"
+          curl -fsS -H "Accept-Language: nl-BE" -H "X-Ingress-Path: /api/hassio_ingress/dev" http://127.0.0.1:8099/ | tee page.html | head -5
+          grep -q "Nu ophalen" page.html
+          grep -q 'href="/api/hassio_ingress/dev/static/app.css' page.html
+          for p in changes status "static/app.css" "static/app.js"; do
+            curl -fsS -o /dev/null -w "%{http_code} $p\n" "http://127.0.0.1:8099/$p"
+          done
+          id=$(grep -o 'data-id="[^"]*"' page.html | head -1 | sed 's/data-id="//;s/"$//')
+          curl -fsS -o /dev/null -w "%{http_code} lesson\n" "http://127.0.0.1:8099/lesson/$id"
+          curl -fsS http://127.0.0.1:8100/calendar.ics | grep -q "BEGIN:VEVENT"
+          curl -fsS -X POST -H "X-Requested-With: fetch" -d language=fr http://127.0.0.1:8099/language
+          docker stop -t 8 ir
+          docker logs ir 2>&1 | tail -3
+          sudo ls -la "$RUNNER_TEMP/data"
+          sudo test -f "$RUNNER_TEMP/data/state.json"
+          sudo test -f "$RUNNER_TEMP/data/users.json"
+      - name: No AppArmor denials
+        run: |
+          if sudo dmesg | grep 'apparmor="DENIED"' | grep 'profile="instructor_radar'; then
+            echo "::error::The AppArmor profile blocked something the app needs (see above)"
+            exit 1
+          fi
+          echo "No denials."

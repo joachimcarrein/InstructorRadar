@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block main %}
+<div class="weekbar">
+  {% if prev %}<a class="nav" href="{{ base }}?week={{ prev }}" aria-label="{{ t('prev_week') }}">‹</a>{% else %}<span class="nav disabled">‹</span>{% endif %}
+  <h1>{{ t("week", number=week_number) }} <small>{{ monday.strftime("%d/%m") }}</small></h1>
+  {% if next %}<a class="nav" href="{{ base }}?week={{ next }}" aria-label="{{ t('next_week') }}">›</a>{% else %}<span class="nav disabled">›</span>{% endif %}
+  {% if not is_current %}<a class="today-link" href="{{ base }}">{{ t("this_week") }}</a>{% endif %}
+</div>
+
+<div class="week days-{{ days|length }}">
+  <div class="hours" aria-hidden="true">
+    <div class="day-head"></div>
+    <div class="hour-col">
+      {% for h in hours %}<span class="hour" data-h="{{ h }}">{{ "%02d"|format(h) }}:00</span>{% endfor %}
+    </div>
+  </div>
+  {% for day in days %}
+  <section class="day{{ ' is-today' if day.today }}">
+    <div class="day-head"><span class="dname">{{ day.name }}</span> <span class="ddate">{{ day.date.strftime("%d/%m") }}</span></div>
+    <div class="day-body">
+      {% for c in day.cards %}
+      <button type="button" class="card gear-{{ c.gear }}{{ ' exam' if c.exam }}{{ ' changed' if c.changed }}"
+              data-id="{{ c.lesson.id }}" data-top="{{ c.top }}" data-height="{{ c.height }}">
+        <span class="c-time">{{ c.time }}</span>
+        <span class="c-label">{{ c.label }}</span>
+        {% if c.gear_label %}<span class="c-gear">{{ c.gear_label }}</span>{% endif %}
+        {% if c.student %}<span class="c-student">{{ c.student }}</span>{% endif %}
+        <span class="c-badges">
+          {% if c.familiarity == 'first' %}<span class="badge first">{{ t("first_lesson") }}</span>{% endif %}
+          {% if c.familiarity == 'new' %}<span class="badge new">{{ t("new_student") }}</span>{% endif %}
+          {% if c.changed %}<span class="badge chg">{{ t("changed_badge") }}</span>{% endif %}
+        </span>
+      </button>
+      {% else %}
+      <p class="empty">{{ t("no_lessons") }}</p>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+#include <tunables/global>
+
+# AppArmor profile for Instructor Radar (Python on the Debian-based python:slim image).
+# The Supervisor renames the profile to the app slug when it loads it.
+# Principle: read what the runtime needs, write only /data (state.json) and /tmp.
+profile instructor_radar flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  # aiohttp on 8099/8100, DNS, HTTPS to the planner, HTTP to the Supervisor proxy.
+  network inet stream,
+  network inet6 stream,
+  network inet dgram,
+  network inet6 dgram,
+  network netlink raw,
+  network unix,
+
+  # Docker stop (SIGTERM).
+  signal,
+
+  # Docker init (init: true) and the Python interpreter.
+  /sbin/docker-init ix,
+  /usr/local/bin/python* ix,
+  /usr/local/bin/ r,
+
+  # Python standard library, installed packages and the app.
+  /usr/local/lib/** mr,
+  /app/ r,
+  /app/** r,
+
+  # Shared libraries, configuration, certificates.
+  /lib/** mr,
+  /usr/lib/** mr,
+  /etc/** r,
+  /usr/share/** r,
+
+  # Runtime introspection.
+  /proc/** r,
+  /sys/** r,
+
+  # Devices.
+  /dev/null rw,
+  /dev/zero r,
+  /dev/random r,
+  /dev/urandom r,
+  /dev/tty rw,
+  /dev/shm/ r,
+  /dev/shm/** rwk,
+
+  # Writable: temp files and the app data folder.
+  /tmp/ rw,
+  /tmp/** rwk,
+  /data/ rw,
+  /data/** rwk,
+}

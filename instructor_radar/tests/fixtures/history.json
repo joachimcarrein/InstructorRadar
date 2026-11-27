@@ -1,0 +1,14 @@
+[
+  {"date": "02/12/2029", "start": "09:00", "end": "11:00", "instructorId": "IY", "instructorName": "Andere Collega",
+   "lessonSequence": "Les: 1 - 2", "timesheetcode": "LESSON", "driverlicenceId": "B", "event_status": "1",
+   "cancel_reason": null, "isFutureAppointment": "0", "appointment_place": "Voorbeeldstraat 1", "price": "60.00"},
+  {"date": "09/12/2029", "start": "09:00", "instructorId": "IY", "instructorName": "Andere Collega",
+   "lessonSequence": "Les: 3 - 4", "timesheetcode": "LESSON", "driverlicenceId": "B",
+   "cancel_reason": "Ziek", "isFutureAppointment": "0"},
+  {"date": "16/12/2029", "start": "14:00", "instructorId": "IX", "instructorName": "Fictieve Instructeur",
+   "lessonSequence": "Les: 3 - 4", "timesheetcode": "LESSON", "driverlicenceId": "B", "event_status": "1",
+   "cancel_reason": "", "isFutureAppointment": "0"},
+  {"date": "07/01/2030", "start": "09:00", "instructorId": "IX", "instructorName": "Fictieve Instructeur",
+   "lessonSequence": "Les: 11 - 12", "timesheetcode": "LESSON", "driverlicenceId": "B", "isFutureAppointment": "1"},
+  {"date": "bogus"}
+]

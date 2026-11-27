@@ -1,0 +1,11 @@
+name: Feature request
+description: An idea to make Instructor Radar more useful (or support for another planner)
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe the situation and what is missing today. For a new planner, name it (no login details).
+    validations:
+      required: true

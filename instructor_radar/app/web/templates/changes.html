@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block main %}
+<h1 class="page-title">{{ t("changes") }}</h1>
+{% if not items %}
+<p class="empty">{{ t("no_changes") }}</p>
+{% else %}
+<ul class="changes">
+  {% for i in items %}
+  <li class="ch-{{ i.change.type }}">
+    <span class="badge ch-type">{{ i.type_label }}</span>
+    <span class="ch-when">{{ i.when }}</span>
+    <span class="ch-what">{{ i.label }}{% if i.licence %} · {{ i.licence }}{% endif %}{% if i.change.lesson.location %} · {{ i.change.lesson.location }}{% endif %}{% if i.student %} · {{ i.student }}{% endif %}</span>
+    {% if i.before %}<span class="ch-before">{{ t("was", value=i.before) }}</span>{% endif %}
+    <span class="ch-detected muted">{{ i.detected }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

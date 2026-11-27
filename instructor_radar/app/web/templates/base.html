@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="{{ t.html_lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ t("app_title") }}</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="{{ base }}static/app.css?v={{ version }}">
+  <script src="{{ base }}static/app.js?v={{ version }}" defer></script>
+</head>
+<body data-base="{{ base }}">
+  <header class="top">
+    <nav class="tabs">
+      <a href="{{ base }}" class="{{ 'active' if page == 'week' }}">{{ t("schedule") }}</a>
+      <a href="{{ base }}changes" class="{{ 'active' if page == 'changes' }}">{{ t("changes") }}</a>
+    </nav>
+    <div class="status status-{{ status.code }}" id="status" title="{{ status.message }}">
+      <span class="dot"></span>
+      <span class="status-text">{{ status.label }} · {{ status.last }}</span>
+      <span class="status-next">{{ status.next }}</span>
+      {% if can_choose_language %}
+      <label class="lang"><span class="sr-only">{{ t("language") }}</span>
+        <select id="language" aria-label="{{ t('language') }}">
+          <option value=""{{ ' selected' if not chosen_language }}>{{ t("language_auto") }}</option>
+          {% for code, name in languages %}<option value="{{ code }}"{{ ' selected' if chosen_language == code }}>{{ name }}</option>{% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      <button type="button" id="fetch-now" {{ 'disabled' if status.running }}>{{ t("fetch_now") }}</button>
+    </div>
+  </header>
+  {% if status.code in ('error', 'busy') and status.message %}
+  <div class="banner banner-{{ status.code }}">{{ status.message }}</div>
+  {% endif %}
+  <div class="toast" id="toast" hidden></div>
+  <main>
+    {% block main %}{% endblock %}
+  </main>
+  <dialog id="detail"><div id="detail-body"></div></dialog>
+</body>
+</html>

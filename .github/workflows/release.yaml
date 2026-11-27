@@ -1,0 +1,172 @@
+# One-click release (Actions › Release › Run workflow, or `gh workflow run release.yaml`).
+# Versions follow the date like Home Assistant: YEAR.MONTH.N (2026.11.0, 2026.11.1, ..., 2026.12.0), counted from the
+# existing tags of that month (Europe/Brussels). A version can still be given explicitly with `-f version=...`.
+# Only people with write access can start it. Order matters: Home Assistant offers an update as soon as main has a
+# new version, so main is only updated after the image exists and can be pulled anonymously.
+#   1. prepare  bump version (config.yaml, app/__init__.py), turn "## Unreleased" in CHANGELOG.md into "## <version>",
+#               commit it on branch release/<version>
+#   2. test     run the tests on that commit
+#   3. build    build, sign and publish the images (build.yaml)
+#   4. publish  check the manifest anonymously, fast-forward main (via the RELEASE_DEPLOY_KEY deploy key, the only
+#               bypass of the main rulesets), tag, create the GitHub release
+# If any step fails, main is untouched; delete the release/<version> branch and run it again.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: New version (leave empty for YEAR.MONTH.N)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the release branch
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Work out the version
+        id: version
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          VERSION="$REQUESTED"
+          if [ -z "$VERSION" ]; then
+            prefix=$(TZ=Europe/Brussels date +%Y.%-m)
+            last=$(git ls-remote --tags origin "refs/tags/$prefix.*" | sed -n "s#.*refs/tags/$prefix\.\([0-9]*\)\$#\1#p" | sort -n | tail -1)
+            VERSION="$prefix.$(( ${last:--1} + 1 ))"
+          fi
+          echo "Version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Validate the version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version must look like 1.2.3"; exit 1
+          fi
+          current=$(sed -n 's/^version: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' instructor_radar/config.yaml)
+          highest=$(printf '%s\n%s\n' "$current" "$VERSION" | sort -V | tail -1)
+          if [ "$VERSION" = "$current" ] || [ "$highest" != "$VERSION" ]; then
+            echo "::error::$VERSION must be higher than the current version $current"; exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::Tag $VERSION already exists"; exit 1
+          fi
+          if ! grep -q '^## Unreleased' instructor_radar/CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## Unreleased' section"; exit 1
+          fi
+          entries=$(awk '/^## Unreleased/{f=1;next} /^## /{f=0} f' instructor_radar/CHANGELOG.md | grep -c '^- ' || true)
+          if [ "$entries" -eq 0 ]; then
+            echo "::error::The '## Unreleased' section of CHANGELOG.md is empty"; exit 1
+          fi
+
+      - name: Bump version and changelog
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          sed -i "s/^version: .*/version: \"$VERSION\"/" instructor_radar/config.yaml
+          sed -i "s/^__version__ = .*/__version__ = \"$VERSION\"  # set by the release workflow/" instructor_radar/app/__init__.py
+          sed -i "0,/^## Unreleased/s//## Unreleased\n\n## $VERSION/" instructor_radar/CHANGELOG.md
+          git diff --stat
+
+      - name: Commit on the release branch
+        id: commit
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "release/$VERSION"
+          git commit -am "release: $VERSION"
+          git push origin "release/$VERSION"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test the release commit
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Test
+        working-directory: instructor_radar
+        run: |
+          pip install -r requirements-dev.txt
+          pytest -q
+
+  build:
+    name: Build images
+    needs: [prepare, test]
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/build.yaml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      ref: ${{ needs.prepare.outputs.sha }}
+
+  publish:
+    name: Publish ${{ needs.prepare.outputs.version }}
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # update main, tag, release
+    steps:
+      - name: The image can be pulled anonymously
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          token=$(curl -fsS "https://ghcr.io/token?scope=repository:${GITHUB_REPOSITORY_OWNER}/instructor_radar:pull" | jq -r .token)
+          curl -fsS -o manifest.json -H "Authorization: Bearer $token" \
+            -H "Accept: application/vnd.oci.image.index.v1+json" \
+            "https://ghcr.io/v2/${GITHUB_REPOSITORY_OWNER}/instructor_radar/manifests/$VERSION"
+          jq -r '.manifests[].platform.architecture' manifest.json | sort -u | tee archs.txt
+          grep -qx amd64 archs.txt && grep -qx arm64 archs.txt
+
+      # main is protected (pull requests + required checks); the release deploy key is the only bypass.
+      # Repository secrets are never available to workflows triggered from forks.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+
+      - name: Fast-forward main, tag and release
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor origin/main "$SHA"; then
+            echo "::error::main moved on while releasing; merge main into release/$VERSION or run the release again"; exit 1
+          fi
+          git push origin "$SHA:refs/heads/main"
+          git tag "$VERSION" "$SHA"
+          git push origin "refs/tags/$VERSION"
+          notes=$(awk -v v="## $VERSION" '$0==v{f=1;next} /^## /{f=0} f' instructor_radar/CHANGELOG.md | sed '/^$/d')
+          gh release create "$VERSION" --title "$VERSION" --notes "$notes" --verify-tag
+          git push origin --delete "release/$VERSION"
