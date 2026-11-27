@@ -65,6 +65,22 @@ def test_familiarity():
     assert StudentInfo("k", history=[h(1, True, Status.CANCELLED), h(2, False)]).familiarity(lesson_day) == "new"
 
 
+def test_familiarity_counts_earlier_planned_lessons():
+    def h(day, start, mine=True, status=Status.PLANNED):
+        return HistoryEntry(dt.date(2026, 12, day), start, "", mine, Kind.LESSON, "", status)
+
+    # Lesson 1-2 still planned on Friday 18/12, lesson 3-4 on Saturday 19/12: not a first lesson.
+    planned = StudentInfo("k", history=[h(18, "15:45"), h(19, "08:00")])
+    assert planned.familiarity(dt.datetime(2026, 12, 18, 15, 45)) == "first"
+    assert planned.familiarity(dt.datetime(2026, 12, 19, 8, 0)) == ""
+    # Same day, earlier lesson with a colleague: new to me, not first.
+    colleague = StudentInfo("k", history=[h(18, "09:00", mine=False), h(18, "13:30")])
+    assert colleague.familiarity(dt.datetime(2026, 12, 18, 13, 30)) == "new"
+    # An earlier planned lesson that was cancelled does not count.
+    cancelled = StudentInfo("k", history=[h(18, "09:00", status=Status.CANCELLED), h(19, "08:00")])
+    assert cancelled.familiarity(dt.datetime(2026, 12, 19, 8, 0)) == "first"
+
+
 def test_practice_minutes():
     def h(status, start="09:00", end="11:00", kind=Kind.LESSON):
         return HistoryEntry(dt.date(2029, 12, 1), start, "X", True, kind, "", status, end=end)

@@ -93,8 +93,8 @@ A week view from Monday, with each lesson as a card:
 
 - time, **Lesson 11-12** or **Exam**, **Manual** / **Automatic** (also by colour; exams have their own colour);
 - the student's name (and age) when enabled;
-- **First lesson**: the student has had no lessons yet;
-- **New to you**: the student has had lessons, but never with you;
+- **First lesson**: the student has no earlier lesson, driven or still planned;
+- **New to you**: the student has earlier lessons (driven or planned), but none with you;
 - **Changed**: the lesson changed in the last fetch.
 
 Tap a card for the details and the student's **lessons so far**: date, instructor (*you* for your own) and, for a

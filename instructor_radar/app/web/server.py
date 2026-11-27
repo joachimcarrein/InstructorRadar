@@ -116,7 +116,7 @@ def _hours(minutes: int) -> str:
 def _familiarity(info: StudentInfo | None, lesson: Lesson) -> str:
     if info is None or lesson.kind != Kind.LESSON:
         return ""
-    return info.familiarity(lesson.start.date())
+    return info.familiarity(lesson.start)
 
 
 def _recently_changed(radar: Radar) -> set[str]:
