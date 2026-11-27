@@ -32,6 +32,8 @@ Not planned yet; open an issue to discuss one.
     - **Send morning summary now** / **send test notification**.
     - **Mark changes as seen** (clears the *Changed* badges).
 - **`auth_mode: manual`**: enter a 2FA code in the UI when a fetch needs one.
-- **More planners** as provider modules.
+- **More planners** as provider modules. We have no account on any other planner, so we cannot see how they work:
+  see [issue #10](https://github.com/joachimcarrein/InstructorRadar/issues/10) for what a provider needs and a sample
+  prompt an instructor can give an AI agent to document their planner (read-only, personal data redacted).
 - Verify on the real planner and remove the `TODO(verify)` markers in `providers/biqsdrive.py` (session-limit
   behaviour, `?e=` codes, `statusConfirmed`, history `event_status` codes).
