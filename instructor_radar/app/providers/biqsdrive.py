@@ -445,6 +445,7 @@ def _to_history(row: dict, own_instructor_ids: set[str], reasons: dict[str, str]
     return HistoryEntry(
         date=date,
         start=str(row.get("start") or "")[:5],
+        end=str(row.get("end") or "")[:5],
         instructor=str(row.get("instructorName") or "").strip(),
         mine=str(row.get("instructorId")) in own_instructor_ids,
         kind=kind,

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Lesson details: the student's driving hours (driven + planned, from their lessons; exams and cancelled lessons do
+  not count), and all their lessons including future ones, with the opened lesson marked. Hours appear after the
+  student's next history refresh (the first fetch of a day).
+- Week view on a computer: the lesson number or "Exam" is shown on the same line as the time.
+- iPhone: no more focus ring around the close button when the lesson details open.
+
 ## 2026.11.0
 
 - First version. Reads a driving instructor's schedule from the school's biqsDRIVE planner at quiet times (default

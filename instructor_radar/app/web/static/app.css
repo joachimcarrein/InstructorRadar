@@ -107,8 +107,9 @@ button:disabled { opacity: .5; cursor: default; }
 .card.gear-automatic { background: var(--auto-bg); border-left-color: var(--auto); }
 .card.exam { background: var(--exam-bg); border-left-color: var(--exam); }
 .card.changed { box-shadow: 0 0 0 2px var(--chg) inset; }
-.c-time { font-weight: 700; }
-.c-label { font-weight: 600; }
+.c-head { display: flex; justify-content: space-between; align-items: baseline; gap: .4rem; width: 100%; }
+.c-time { font-weight: 700; white-space: nowrap; }
+.c-label { font-weight: 600; text-align: right; }
 .c-gear { color: var(--muted); }
 .c-student { font-style: italic; }
 .c-badges { display: flex; flex-wrap: wrap; gap: .2rem; }
@@ -133,7 +134,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .detail header { display: flex; justify-content: space-between; align-items: center; }
 .detail h2 { margin: 0; font-size: 1.2rem; }
 .detail h3 { font-size: 1rem; margin: 1rem 0 .4rem; }
-.detail .close { border: 0; font-size: 1.5rem; line-height: 1; padding: 0 .3rem; }
+.detail .close { border: 0; font-size: 1.5rem; line-height: 1; padding: 0 .3rem; background: transparent; }
+dialog:focus, .detail .close:focus:not(:focus-visible) { outline: none; }
 .detail dl { display: grid; grid-template-columns: auto 1fr; gap: .2rem .8rem; margin: .8rem 0; }
 .detail dt { color: var(--muted); }
 .detail dd { margin: 0; }
@@ -147,6 +149,9 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .history .h-cancelled .h-date { text-decoration: line-through; }
 .history .h-cancel { color: var(--chg); }
 .history .h-kind { color: var(--muted); }
+.history .h-planned { color: var(--accent); }
+.history .current { background: var(--today); border-radius: .3rem; padding-left: .3rem; padding-right: .3rem; }
+.badge.cur { color: var(--accent); }
 
 /* Changes */
 .changes { list-style: none; padding: 0; margin: 0; }
@@ -169,6 +174,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   .day-body { height: auto; background-image: none; padding: .3rem; display: flex; flex-direction: column; gap: .3rem; }
   .day-body .empty { display: block; margin: .3rem; }
   .card { position: static; height: auto; width: 100%; flex-direction: row; flex-wrap: wrap; gap: .1rem .6rem; font-size: .9rem; }
+  .c-head { width: auto; justify-content: flex-start; gap: .6rem; }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .lang select {

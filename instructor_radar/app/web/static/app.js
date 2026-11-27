@@ -35,6 +35,9 @@
       if (!res.ok) return;
       body.innerHTML = await res.text(); // server-rendered, autoescaped template
       dialog.showModal();
+      // Focus the dialog itself, not the close button (iOS draws a focus ring around it otherwise).
+      dialog.setAttribute("tabindex", "-1");
+      dialog.focus({ preventScroll: true });
       return;
     }
     if (ev.target.closest("[data-close]") || ev.target === dialog) dialog.close();

@@ -21,8 +21,7 @@
       {% for c in day.cards %}
       <button type="button" class="card gear-{{ c.gear }}{{ ' exam' if c.exam }}{{ ' changed' if c.changed }}"
               data-id="{{ c.lesson.id }}" data-top="{{ c.top }}" data-height="{{ c.height }}">
-        <span class="c-time">{{ c.time }}</span>
-        <span class="c-label">{{ c.label }}</span>
+        <span class="c-head"><span class="c-time">{{ c.time }}</span><span class="c-label">{{ c.label }}</span></span>
         {% if c.gear_label %}<span class="c-gear">{{ c.gear_label }}</span>{% endif %}
         {% if c.student %}<span class="c-student">{{ c.student }}</span>{% endif %}
         <span class="c-badges">
