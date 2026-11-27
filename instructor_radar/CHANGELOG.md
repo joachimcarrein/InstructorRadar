@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.11.3
+
 - Lesson history: an exam and the drive back from the exam centre are one line now ("Exam 2"), with the result
   (**Passed** / **Not passed**) once the planner has it. The drive back no longer shows as a separate exam without
   "Planned".
