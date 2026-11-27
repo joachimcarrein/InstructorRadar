@@ -31,6 +31,11 @@ Not planned yet; open an issue to discuss one.
       fallback, it needs no MQTT).
     - **Send morning summary now** / **send test notification**.
     - **Mark changes as seen** (clears the *Changed* badges).
+- **Week view: an exam and its drive back as one card** (as in the lesson history already), or the drive back
+  shown as travel time instead of a second *Exam*. Both are separate appointments in the planner (they share an id).
+- **Student refresh order.** At most 40 students are fetched per run (to keep the planner session short). With a
+  long window there can be more; they are now taken in key order, so some wait for the next run without history,
+  age or badge. Take the students of the nearest lessons first (and/or raise the limit, watching the session time).
 - **`auth_mode: manual`**: enter a 2FA code in the UI when a fetch needs one.
 - **More planners** as provider modules. We have no account on any other planner, so we cannot see how they work:
   see [issue #10](https://github.com/joachimcarrein/InstructorRadar/issues/10) for what a provider needs and a sample
