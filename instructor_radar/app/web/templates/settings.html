@@ -46,11 +46,15 @@
   <div class="option">
     <label class="check"><input type="checkbox" name="reminder" value="on"{{ " checked" if prefs.reminder }}> {{ t("settings_reminder") }}</label>
     <span class="inline"><input type="number" name="reminder_minutes" min="5" max="240" value="{{ prefs.reminder_minutes }}" required> {{ t("settings_minutes") }}</span>
+    <div class="sample"><span class="sample-label">{{ t("settings_example") }}</span><strong>{{ sample_reminder[0] }}</strong>
+{{ sample_reminder[1] }}</div>
   </div>
   <div class="option">
     <label class="check"><input type="checkbox" name="summary" value="on"{{ " checked" if prefs.summary }}> {{ t("settings_summary") }}</label>
     <span class="inline">{{ t("settings_at") }} <input type="time" name="summary_time" value="{{ prefs.summary_time.strftime('%H:%M') }}" required></span>
     <small>{{ t("settings_summary_help") }}</small>
+    <div class="sample"><span class="sample-label">{{ t("settings_example") }}</span><strong>{{ sample_summary[0] }}</strong>
+{{ sample_summary[1] }}</div>
   </div>
   {% if nobody %}<p class="muted">{{ t("settings_fallback") }}</p>{% endif %}
   <div class="actions">

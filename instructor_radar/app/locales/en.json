@@ -92,5 +92,6 @@
   "test_title": "Instructor Radar",
   "test_message": "Test: this device receives Instructor Radar notifications.",
   "reminder_title": "In {minutes} min: {label}",
-  "summary_title": "Today: {count} lesson(s)"
+  "summary_title": "Today: {count} lesson(s)",
+  "settings_example": "Example"
 }

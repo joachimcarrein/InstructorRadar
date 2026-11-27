@@ -46,6 +46,7 @@ class Lesson:
     student_key: str  # opaque key (hash), never the planner's own id
     student_name: str | None = None  # only when include_student_name is on
     student_age: int | None = None  # only when include_student_age is on
+    title: str = ""  # only for appointments without a student (e.g. 'Beschikbaar voor rijlessen')
 
     # Fields compared to detect a change (the student name/age are display data, not a schedule change).
     COMPARED = ("start", "end", "kind", "licence", "transmission", "sequence", "location", "status", "student_key")
@@ -71,6 +72,7 @@ class Lesson:
             student_key=str(d.get("student_key", "")),
             student_name=d.get("student_name"),
             student_age=d.get("student_age"),
+            title=str(d.get("title", "")),
         )
 
     def without_personal(self, keep_name: bool, keep_age: bool) -> Lesson:

@@ -381,7 +381,23 @@ def _to_lesson(raw: dict, locations: dict[str, str], session: PlannerSession, st
         status=_status(raw),
         student_key=key,
         student_name=name if settings.include_student_name and key else None,
+        # The title of a lesson contains the student's phone: only read it for entries without a student.
+        title=_appointment_title(raw) if not key else "",
     )
+
+
+def _appointment_title(raw: dict) -> str:
+    """Title of an appointment without a student: titleShort, else the title without its '( ... )' wrapping.
+
+    Verified: free time (timesheetCode FREE_UNREG) has titleShort 'Beschikbaar voor rijlessen' or an empty '(  )'.
+    Long digit runs are masked anyway, in case someone typed a phone number into a free appointment.
+    """
+    text = str(raw.get("titleShort") or "").strip()
+    if not text:
+        text = re.sub(r"\s+", " ", str(raw.get("title") or "")).strip()
+        text = re.sub(r"^\(\s*(.*?)\s*\)$", r"\1", text).strip()
+    text = re.sub(r"\d[\d .\-/]{5,}\d", "…", text)
+    return text[:80]
 
 
 def _student_extract(record: Any) -> tuple[str, Any]:

@@ -106,6 +106,7 @@ button:disabled { opacity: .5; cursor: default; }
 .card.gear-manual { background: var(--manual-bg); border-left-color: var(--manual); }
 .card.gear-automatic { background: var(--auto-bg); border-left-color: var(--auto); }
 .card.exam { background: var(--exam-bg); border-left-color: var(--exam); }
+.card.other { background: var(--bg); border: 1px dashed var(--line); border-left: 4px solid var(--muted); color: var(--muted); }
 .card.changed { box-shadow: 0 0 0 2px var(--chg) inset; }
 .c-head { display: flex; justify-content: space-between; align-items: baseline; gap: .4rem; width: 100%; }
 .c-time { font-weight: 700; white-space: nowrap; }
@@ -204,3 +205,8 @@ dialog:focus, .detail .close:focus:not(:focus-visible) { outline: none; }
 }
 .actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sample {
+  flex-basis: 100%; white-space: pre-line; font-size: .85rem; background: var(--bg); border: 1px solid var(--line);
+  border-radius: .5rem; padding: .5rem .7rem; margin-top: .2rem;
+}
+.sample-label { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }

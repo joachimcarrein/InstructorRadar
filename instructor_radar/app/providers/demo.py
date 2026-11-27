@@ -54,6 +54,15 @@ class DemoProvider:
                         )
                     )
                     n += 1
+            if day.weekday() == 2:
+                lessons.append(
+                    Lesson(
+                        id=f"demo-free-{day:%Y%m%d}", start=dt.datetime.combine(day, dt.time(7, 30)),
+                        end=dt.datetime.combine(day, dt.time(8, 0)), kind=Kind.OTHER, licence="",
+                        transmission=Transmission.UNKNOWN, sequence="", location="", status=Status.PLANNED,
+                        student_key="", title="Beschikbaar voor rijlessen",
+                    )
+                )
             day += dt.timedelta(days=1)
         return lessons
 
