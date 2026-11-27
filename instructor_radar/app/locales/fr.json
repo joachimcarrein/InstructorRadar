@@ -52,7 +52,6 @@
   "notify_added": "Nouveau : {lesson}",
   "notify_changed": "Modifié : {lesson} (avant : {before})",
   "notify_removed": "Annulé : {lesson}",
-  "error_title": "Instructor Radar",
   "busy_message": "Toutes les sessions du planning sont utilisées. Le planning affiché date du {when}.",
   "calendar_link": "Calendrier pour Home Assistant",
   "weekdays": "lu,ma,me,je,ve,sa,di",

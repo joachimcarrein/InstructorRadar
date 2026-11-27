@@ -24,9 +24,7 @@ from ..models import Lesson, StudentInfo
 
 
 class ProviderError(Exception):
-    """Base class. `message` is shown to the user (persistent notification / UI) and must hold no personal data."""
-
-    notify = True  # raise a persistent notification in Home Assistant
+    """Base class. `message` is shown in the log and the app's status banner and must hold no personal data."""
 
     def __init__(self, message: str):
         super().__init__(message)
@@ -51,8 +49,6 @@ class NotLoggedIn(UnexpectedResponse):
 
 class PlannerBusy(ProviderError):
     """All sessions of the account are in use. Not an error of the add-on: keep the old data and try again later."""
-
-    notify = False
 
 
 @dataclass(frozen=True)

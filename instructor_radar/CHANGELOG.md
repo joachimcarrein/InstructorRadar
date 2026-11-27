@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Problems (refused login, captcha, unexpected planner answer, planner unreachable) no longer raise a notification
+  in Home Assistant: they are written to the add-on log and shown in the status bar of the app. A notification
+  left by an older version is removed at the next successful fetch.
+
 ## 2026.11.5
 
 - **Student names and ages are kept once per student** instead of on every lesson and every change. Switching

@@ -7,12 +7,12 @@ def _notifications(radar):
     return [c for c in radar.ha.calls if c[0] == "persistent_notification" and c[3] == ERROR_NOTIFICATION_ID]
 
 
-async def test_bad_password_raises_notification_and_does_not_retry(make_radar):
+async def test_bad_password_is_logged_and_not_retried(make_radar):
     radar, planner = await make_radar("bad_password")
     run = await radar.run()
     assert run.status == "error"
     assert "refused the login" in run.message
-    assert len(_notifications(radar)) == 1
+    assert _notifications(radar) == []  # log + app banner only
     assert radar.retry_at is None
     assert len(planner.login_forms) == 1  # exactly one attempt
     assert planner.logouts == 1  # logout is still sent (harmless, frees any half-made session)
@@ -31,7 +31,7 @@ async def test_redirect_with_error_code(make_radar):
     radar, _ = await make_radar("redirect_fail")
     run = await radar.run()
     assert run.status == "error" and "code 14" in run.message
-    assert len(_notifications(radar)) == 1
+    assert _notifications(radar) == []  # log + app banner only
 
 
 async def test_captcha_is_reported(make_radar):
@@ -45,7 +45,7 @@ async def test_html_instead_of_json(make_radar):
     radar, planner = await make_radar("html_events")
     run = await radar.run()
     assert run.status == "error" and "HTML instead of JSON" in run.message
-    assert len(_notifications(radar)) == 1
+    assert _notifications(radar) == []  # log + app banner only
     assert planner.logouts == 1
 
 
@@ -71,7 +71,7 @@ async def test_busy_keeps_schedule_retries_once_and_does_not_notify(make_radar):
     assert run.status == "busy" and radar.retry_at is None  # only one retry, then the normal schedule
 
 
-async def test_error_notification_dismissed_after_recovery(make_radar):
+async def test_old_error_notification_dismissed_after_recovery(make_radar):
     radar, planner = await make_radar("bad_password")
     await radar.run()
     planner.mode = "ok"
@@ -108,3 +108,17 @@ async def test_run_time_limit_still_logs_out(make_radar, monkeypatch):
     run = await radar.run()
     assert run.status == "error" and "in time" in run.message
     assert planner.logouts == 1
+
+
+async def test_problem_is_logged_and_shown_in_the_app(make_radar, caplog):
+    from aiohttp.test_utils import TestClient, TestServer
+
+    from app.web.server import ui_app
+
+    radar, _ = await make_radar("bad_password")
+    await radar.run()
+    assert "Fetch failed: The planner refused the login" in caplog.text
+    async with TestClient(TestServer(ui_app(radar, addon_mode=False))) as client:
+        html = await (await client.get("/", headers={"Accept-Language": "en"})).text()
+    assert "banner-error" in html and "refused the login" in html
+    assert not [c for c in radar.ha.calls if c[0] in ("persistent_notification", "notify")]

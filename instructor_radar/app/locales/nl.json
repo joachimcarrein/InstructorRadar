@@ -52,7 +52,6 @@
   "notify_added": "Nieuw: {lesson}",
   "notify_changed": "Gewijzigd: {lesson} (was {before})",
   "notify_removed": "Geannuleerd: {lesson}",
-  "error_title": "Instructor Radar",
   "busy_message": "Alle sessies van de planner zijn in gebruik. De planning is van {when}.",
   "calendar_link": "Kalender voor Home Assistant",
   "weekdays": "ma,di,wo,do,vr,za,zo",
