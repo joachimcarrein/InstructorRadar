@@ -92,5 +92,6 @@
   "test_title": "Instructor Radar",
   "test_message": "Test: dit toestel krijgt meldingen van Instructor Radar.",
   "reminder_title": "Over {minutes} min: {label}",
-  "summary_title": "Vandaag: {count} les(sen)"
+  "summary_title": "Vandaag: {count} les(sen)",
+  "settings_example": "Voorbeeld"
 }

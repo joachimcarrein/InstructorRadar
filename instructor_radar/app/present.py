@@ -11,7 +11,7 @@ def kind_label(lesson: Lesson, t: Translator) -> str:
         return t("exam")
     if lesson.kind == Kind.LESSON:
         return t("lesson", sequence=lesson.sequence) if lesson.sequence else t("lesson_plain")
-    return t("other")
+    return lesson.title or t("other")
 
 
 def licence_label(lesson: Lesson, t: Translator) -> str:

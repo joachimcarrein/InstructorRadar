@@ -111,6 +111,30 @@ class Notifier:
         return await self._send(prefs.devices, t("test_title"), t("test_message"))
 
 
+def notification_samples(t: Translator, settings) -> tuple[tuple[str, str], tuple[str, str]]:
+    """(reminder, summary) as (title, message) with made-up lessons, written by the same code as the real ones."""
+    from .models import Kind, Transmission
+
+    today = dt.date.today()
+    names = settings.include_student_name
+    age = settings.include_student_age
+
+    def lesson(hour, minute, hours, kind, gear, seq, name, years):
+        start = dt.datetime.combine(today, dt.time(hour, minute))
+        return Lesson(
+            id=f"sample-{hour}", start=start, end=start + dt.timedelta(hours=hours), kind=kind, licence="B",
+            transmission=gear, sequence=seq, location="Centrum", status=Status.PLANNED, student_key="sample",
+            student_name=name if names else None, student_age=years if names and age else None,
+        )
+
+    day = [
+        lesson(8, 0, 2, Kind.LESSON, Transmission.MANUAL, "11-12", "Alex Voorbeeld", 18),
+        lesson(10, 30, 2, Kind.LESSON, Transmission.AUTOMATIC, "3-4", "Sam Testmans", 17),
+        lesson(14, 50, 1, Kind.EXAM, Transmission.AUTOMATIC, "", "Robin Fictief", 24),
+    ]
+    return _reminder(day[0], 30, t), _summary(day, t)
+
+
 def _changes_message(relevant: list[Change], t: Translator) -> str:
     lines = []
     for c in relevant[:MAX_LINES]:

@@ -173,3 +173,12 @@ async def test_status_bar_follows_new_fetch_times(make_radar):
         data = await (await client.get("/status", headers={"Accept-Language": "en"})).json()
     assert "07:45" in data["next"]
     assert NOW.hour == 7  # 07:45 is later today
+
+
+async def test_settings_page_shows_samples(make_radar):
+    radar, _ = await make_radar(include_student_name=True, include_student_age=True)
+    async with TestClient(TestServer(ui_app(radar, addon_mode=False))) as client:
+        html = await (await client.get("/settings", headers={"Accept-Language": "nl-BE"})).text()
+    assert "Voorbeeld" in html
+    assert "Over 30 min: Les 11-12" in html  # reminder sample
+    assert "Vandaag: 3 les(sen)" in html and "14:50 Examen – B automaat – Centrum – Robin Fictief (24)" in html

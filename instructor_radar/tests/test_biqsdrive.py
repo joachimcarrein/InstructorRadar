@@ -94,3 +94,28 @@ async def test_second_run_same_day_skips_student_refresh(make_radar):
     radar.test_clock["now"] += dt.timedelta(hours=3)
     await radar.run()
     assert not any("crud_customer" in c for c in planner.calls)
+
+
+def test_appointment_title_for_entries_without_student():
+    from app.providers.biqsdrive import _appointment_title
+
+    assert _appointment_title({"titleShort": "Beschikbaar voor rijlessen", "title": "( Beschikbaar voor rijlessen )\n"}) \
+        == "Beschikbaar voor rijlessen"
+    assert _appointment_title({"title": " (  )\n \n\n\n"}) == ""
+    assert _appointment_title({"title": " ( Vergadering kantoor )\n"}) == "Vergadering kantoor"
+    assert _appointment_title({"titleShort": "Bel 0499 11 22 33"}) == "Bel …"
+
+
+def test_lesson_never_takes_the_title_and_free_time_does():
+    from app.i18n import Translator
+    from app.present import kind_label
+    from app.providers import PlannerSession
+    from app.providers.biqsdrive import _to_lesson
+
+    session = PlannerSession(http=None, base_url="https://x.invalid")
+    lesson = _to_lesson({"id": "1", "start": "2030-01-07 09:00:00", "end": "2030-01-07 11:00:00", "studentId": "01|1|2030",
+                         "timesheetCode": "LESSON", "titleShort": "0499112233", "title": "x|0499112233"}, {}, session, {})
+    free = _to_lesson({"id": "2", "start": "2030-01-07 07:30:00", "end": "2030-01-07 08:00:00", "timesheetCode": "FREE_UNREG",
+                       "titleShort": "Beschikbaar voor rijlessen"}, {}, session, {})
+    assert lesson.title == "" and "0499" not in repr(lesson)
+    assert free.kind == Kind.OTHER and kind_label(free, Translator("nl")) == "Beschikbaar voor rijlessen"

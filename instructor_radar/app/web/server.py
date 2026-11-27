@@ -16,6 +16,7 @@ from .. import __version__
 from ..config import ConfigError
 from ..i18n import Translator, language_names, pick_language
 from ..models import Kind, Lesson, StudentInfo
+from ..notifier import notification_samples
 from ..present import kind_label, licence_label, student_label
 from ..scheduler import next_run
 from ..settings import NotifyPrefs, SharedSettings
@@ -143,6 +144,7 @@ def _card(lesson: Lesson, radar: Radar, t: Translator, changed: set[str]) -> dic
         "top": f"{top:.2f}",
         "height": f"{height:.2f}",
         "exam": lesson.kind == Kind.EXAM,
+        "other": lesson.kind == Kind.OTHER,
     }
 
 
@@ -283,8 +285,11 @@ async def settings_page(request: web.Request) -> web.Response:
     # Nothing is ticked until the user chooses: Home Assistant lists every user's phones, and a careless Save must
     # not subscribe them all.
     selected = set(prefs.devices or ())
+    sample_reminder, sample_summary = notification_samples(t, radar.settings)
     return _render(
         "settings.html",
+        sample_reminder=sample_reminder,
+        sample_summary=sample_summary,
         **c,
         shared=radar.settings,
         fetch_times=", ".join(x.strftime("%H:%M") for x in radar.settings.fetch_times),

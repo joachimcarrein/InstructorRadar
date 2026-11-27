@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Appointments without a student (e.g. free time "Beschikbaar voor rijlessen") show their title instead of
+  "Appointment", in a neutral grey card. Lessons never use the planner's title (it contains the student's phone).
+- Settings › My notifications: an example of the reminder and of the morning summary, in your language.
+
 - Settings › My notifications: no device is ticked by default any more (Home Assistant lists the phones of every
   user); tick only your own.
 
