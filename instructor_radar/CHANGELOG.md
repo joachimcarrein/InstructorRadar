@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.11.5
+
 - **Student names and ages are kept once per student** instead of on every lesson and every change. Switching
   names or ages on fills them in at the next fetch (also the same day); switching them off removes them from one
   place. Stored names carry over when updating. A removed lesson still shows who it was for.
