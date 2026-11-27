@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **First lesson** / **New to you** also count earlier lessons that are still planned: lesson 3-4 the day after a
+  planned lesson 1-2 is no longer marked as a first lesson.
+
 ## 2026.11.3
 
 - Lesson history: an exam and the drive back from the exam centre are one line now ("Exam 2"), with the result

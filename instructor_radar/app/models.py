@@ -162,9 +162,19 @@ class StudentInfo:
         """(driven, planned) number of practical lessons, counted in lesson units ('11-12' = 2)."""
         return self._practice(lambda h: h.units)
 
-    def familiarity(self, before: dt.date) -> str:
-        """'first' = no past lesson at all, 'new' = past lessons but never with me, '' = I had them before."""
-        past = [h for h in self.history if h.date < before and h.status == Status.DONE and h.kind == Kind.LESSON]
+    def familiarity(self, before: dt.datetime | dt.date) -> str:
+        """'first' = no earlier lesson at all, 'new' = earlier lessons but never with me, '' = I had them before.
+
+        Earlier = before this lesson (date and start time), driven or still planned: lesson 3-4 the day after a
+        planned lesson 1-2 is not a first lesson. Cancelled lessons and exams do not count.
+        """
+        if isinstance(before, dt.datetime):
+            limit = (before.date(), f"{before:%H:%M}")
+            earlier = [h for h in self.history if (h.date, h.start) < limit]
+        else:
+            earlier = [h for h in self.history if h.date < before]
+        counted = (Status.DONE, Status.PLANNED, Status.CONFIRMED)
+        past = [h for h in earlier if h.status in counted and h.kind == Kind.LESSON]
         if not past:
             return "first"
         if not any(h.mine for h in past):
