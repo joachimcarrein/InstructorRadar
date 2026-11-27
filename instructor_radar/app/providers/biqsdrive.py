@@ -19,6 +19,9 @@ Verified on 2026-11-27 (v1.106-015):
 - POST php/crud_customer.php?action=get_customer_events {customer_index, UniqueId} -> the student's lessons with
   every instructor (date, start, instructorId, instructorName, lessonSequence, timesheetcode, event_status,
   cancel_reason, isFutureAppointment). Rows are not uniform.
+  An exam is two rows with the same event_id: LESSON_EXAM (the exam itself) and EXAM_TIME (the drive back from the
+  exam centre, right after it; its isFutureAppointment is "0" even for future exams). lessonSequence is ex1, ex2, ...
+  (attempt). exam_passed "1"/"0" + exam_result text ("Niet geslaagd") once the result is known, else null.
 """
 
 from __future__ import annotations
@@ -149,7 +152,7 @@ class BiqsDriveProvider:
         own = session.private.get("instructor_ids", set())
         reasons = await self._delete_reasons(session) if _needs_reason_lookup(rows) else {}
         history = sorted(
-            (h for h in (_to_history(r, own, reasons) for r in _rows(rows)) if h is not None),
+            (h for h in (_to_history(r, own, reasons) for r in _merge_exam_time(_rows(rows))) if h is not None),
             key=lambda h: (h.date, h.start),
         )
         return StudentInfo(key=student_key, age=age, history=history)
@@ -440,6 +443,39 @@ def _needs_reason_lookup(data: Any) -> bool:
     return any(str(r.get("cancel_reason") or "").isdigit() for r in _rows(data))
 
 
+def _code(row: dict) -> str:
+    return str(row.get("timesheetcode") or "").upper()
+
+
+def _merge_exam_time(rows: list[dict]) -> list[dict]:
+    """Fold each EXAM_TIME row (the drive back after the exam) into the exam row with the same event_id.
+
+    One exam then shows as one history entry, from the exam start to the end of the drive back. An EXAM_TIME row
+    without its exam row is kept as it is.
+    """
+    exam_ids = {r.get("event_id") for r in rows if _code(r) == "LESSON_EXAM" and r.get("event_id")}
+    back_end = {
+        r.get("event_id"): str(r.get("end") or "")
+        for r in rows
+        if _code(r) == "EXAM_TIME" and r.get("event_id") in exam_ids and r.get("end")
+    }
+    merged = []
+    for r in rows:
+        if _code(r) == "EXAM_TIME" and r.get("event_id") in exam_ids:
+            continue
+        if _code(r) == "LESSON_EXAM" and r.get("event_id") in back_end:
+            r = {**r, "end": max(str(r.get("end") or ""), back_end[r.get("event_id")])}
+        merged.append(r)
+    return merged
+
+
+def _exam_result(row: dict) -> str:
+    """'passed' / 'failed' once the planner has a result, else ''."""
+    if not row.get("exam_result_code") and not row.get("exam_result"):
+        return ""
+    return {"1": "passed", "0": "failed"}.get(str(row.get("exam_passed")), "")
+
+
 def _to_history(row: dict, own_instructor_ids: set[str], reasons: dict[str, str]) -> HistoryEntry | None:
     try:
         date = dt.datetime.strptime(str(row.get("date") or ""), "%d/%m/%Y").date()
@@ -468,4 +504,5 @@ def _to_history(row: dict, own_instructor_ids: set[str], reasons: dict[str, str]
         sequence=_sequence(row.get("lessonSequence")),
         status=status,
         cancel_reason=reason,
+        result=_exam_result(row) if kind == Kind.EXAM else "",
     )

@@ -151,6 +151,8 @@ dialog:focus, .detail .close:focus:not(:focus-visible) { outline: none; }
 .history .h-cancel { color: var(--chg); }
 .history .h-kind { color: var(--muted); }
 .history .h-planned { color: var(--accent); }
+.history .h-result.passed { color: var(--manual); font-weight: 600; }
+.history .h-result.failed { color: var(--chg); font-weight: 600; }
 .history .current { background: var(--today); border-radius: .3rem; padding-left: .3rem; padding-right: .3rem; }
 .badge.cur { color: var(--accent); }
 

@@ -135,7 +135,7 @@ class Radar:
                     login_attempted = True
                     await self.provider.login(session, credentials)
                     lessons = await self.provider.fetch_events(session, window_start, window_end)
-                    changes = diff(self.state.lessons, lessons, window_start, window_end, now)
+                    changes = diff(self.state.lessons, lessons, window_start, window_end, now, self.state.window_end)
                     students, refreshed = await self._refresh_students(session, lessons, changes, today)
             finally:
                 if login_attempted:

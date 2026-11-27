@@ -7,6 +7,7 @@ from app.providers.biqsdrive import (
     _has_captcha,
     _kind,
     _licence,
+    _merge_exam_time,
     _parse_seats,
     _sequence,
     _to_history,
@@ -70,6 +71,41 @@ def test_history_reason_lookup_and_mine():
 
 def test_history_bad_rows_skipped():
     assert _to_history({"date": "bogus"}, set(), {}) is None
+
+
+def _exam_rows(event_id, date, start, mid, end, passed=None):
+    result = {"exam_result_code": "2", "exam_result": "Niet geslaagd", "exam_passed": passed} if passed else {}
+    common = {"event_id": event_id, "date": date, "driverlicenceId": "EX-B", "lessonSequence": "ex2",
+              "instructorId": "IX", **result}
+    return [
+        {**common, "start": start, "end": mid, "timesheetcode": "LESSON_EXAM", "isFutureAppointment": "1"},
+        # Verified on the live site: the drive back says isFutureAppointment "0" even for a future exam.
+        {**common, "start": mid, "end": end, "timesheetcode": "EXAM_TIME", "isFutureAppointment": "0"},
+    ]
+
+
+def test_exam_and_drive_back_are_one_entry():
+    rows = [
+        {"date": "06/03/2026", "start": "12:45", "end": "13:45", "timesheetcode": "LESSON", "lessonSequence": "Les: 24"},
+        *_exam_rows("av_exam_1", "06/03/2026", "14:00", "14:50", "16:00"),
+        {"event_id": "av_exam_x", "date": "07/03/2026", "start": "10:00", "end": "11:00", "timesheetcode": "EXAM_TIME"},
+    ]
+    history = [_to_history(r, {"IX"}, {}) for r in _merge_exam_time(rows)]
+    exams = [h for h in history if h.kind == Kind.EXAM]
+    assert [(h.start, h.end) for h in exams] == [("14:00", "16:00"), ("10:00", "11:00")]  # orphan drive back kept
+    assert exams[0].status == Status.PLANNED and exams[0].sequence == "2"
+    assert len(history) == 3
+
+
+def test_exam_result():
+    failed, _ = _exam_rows("e", "06/03/2026", "14:00", "14:50", "16:00", passed="0")
+    passed = {**failed, "exam_passed": "1", "exam_result": "Geslaagd"}
+    planned, _ = _exam_rows("e", "06/03/2027", "14:00", "14:50", "16:00")
+    assert _to_history({**failed, "isFutureAppointment": "0"}, set(), {}).result == "failed"
+    assert _to_history({**passed, "isFutureAppointment": "0"}, set(), {}).result == "passed"
+    assert _to_history({**planned, "exam_passed": None, "exam_result": None}, set(), {}).result == ""
+    lesson = {"date": "06/03/2026", "timesheetcode": "LESSON", "exam_passed": "0", "exam_result": "x"}
+    assert _to_history(lesson, set(), {}).result == ""
 
 
 async def test_full_run_builds_history_and_familiarity(make_radar):

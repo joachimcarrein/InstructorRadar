@@ -33,6 +33,13 @@ def test_added_changed_removed():
     assert changed.fields == ("start", "end") and changed.before.start.hour == 9
 
 
+def test_lessons_beyond_the_previous_window_are_not_added():
+    # The window grew from the 14th to the 21st: lessons after the 14th were never looked at, so they are not new.
+    new = [_l("seen", 10), _l("edge", 14), _l("beyond", 18)]
+    changes = diff({}, new, dt.date(2030, 1, 7), dt.date(2030, 1, 21), NOW, seen_until=dt.date(2030, 1, 14))
+    assert {c.lesson.id for c in changes} == {"seen", "edge"}
+
+
 def test_name_change_is_not_a_schedule_change():
     old = {"a": _l("a", 7)}
     new = [replace(_l("a", 7), student_name="Someone", student_age=18)]
