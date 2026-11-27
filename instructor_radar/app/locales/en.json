@@ -88,7 +88,6 @@
   "settings_test": "Send test notification",
   "test_sent": "Test sent to {count} device(s).",
   "test_none": "Save at least one device first.",
-  "settings_fallback": "As long as nobody has set up notifications, schedule changes appear as a notification in Home Assistant.",
   "test_title": "Instructor Radar",
   "test_message": "Test: this device receives Instructor Radar notifications.",
   "reminder_title": "In {minutes} min: {label}",

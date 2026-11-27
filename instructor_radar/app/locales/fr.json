@@ -88,7 +88,6 @@
   "settings_test": "Envoyer une notification de test",
   "test_sent": "Test envoyé à {count} appareil(s).",
   "test_none": "Enregistrez d'abord au moins un appareil.",
-  "settings_fallback": "Tant que personne n'a configuré de notifications, les modifications apparaissent comme notification dans Home Assistant.",
   "test_title": "Instructor Radar",
   "test_message": "Test : cet appareil reçoit les notifications d'Instructor Radar.",
   "reminder_title": "Dans {minutes} min : {label}",

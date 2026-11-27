@@ -297,7 +297,6 @@ async def settings_page(request: web.Request) -> web.Response:
         services=services,
         selected=selected,
         can_notify=bool(radar.users and user),
-        nobody=not (radar.users and radar.users.recipients()),
         status=_status(radar, t),
         page="settings",
     )

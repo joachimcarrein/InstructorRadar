@@ -69,8 +69,8 @@ async def test_change_detected_between_runs_and_notified(make_radar):
     assert run.changes == 2
     types = sorted(c.type for c in radar.state.changes)
     assert types == ["changed", "removed"]
-    notes = [c for c in radar.ha.calls if c[0] == "persistent_notification" and c[3] == "instructor_radar_changes"]
-    assert len(notes) == 1 and "Geannuleerd" in notes[0][2]
+    # Nobody set up notifications: nothing is sent anywhere (no fallback).
+    assert not [c for c in radar.ha.calls if c[0] in ("notify", "persistent_notification")]
 
 
 async def test_changes_go_to_the_users_devices(make_radar):
@@ -78,9 +78,12 @@ async def test_changes_go_to_the_users_devices(make_radar):
 
     radar, planner = await make_radar()
     radar.users.set_notify("u1", NotifyPrefs(devices=("notify.mobile_app_phone",)))
+    radar.users.set_language("u1", "nl")
+    radar.users.set_notify("u2", NotifyPrefs(devices=("notify.mobile_app_other",), changes=False, reminder=True))
     await radar.run()
-    planner.events[0]["location"] = "02"
+    planner.events = [e for e in planner.events if e.get("id") != "9001"]  # today's lesson cancelled
     radar.test_clock["now"] = NOW + dt.timedelta(hours=1)
     await radar.run()
-    assert [c for c in radar.ha.calls if c[0] == "notify" and c[1] == "mobile_app_phone"]
-    assert not [c for c in radar.ha.calls if c[0] == "persistent_notification" and c[3] == "instructor_radar_changes"]
+    sent = [c for c in radar.ha.calls if c[0] == "notify"]
+    assert len(sent) == 1 and sent[0][1] == "mobile_app_phone" and "Geannuleerd" in sent[0][3]
+    assert not [c for c in radar.ha.calls if c[0] == "persistent_notification"]

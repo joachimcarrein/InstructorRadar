@@ -88,7 +88,6 @@
   "settings_test": "Testmelding sturen",
   "test_sent": "Test verstuurd naar {count} toestel(len).",
   "test_none": "Sla eerst minstens één toestel op.",
-  "settings_fallback": "Zolang niemand meldingen heeft ingesteld, verschijnen wijzigingen als melding in Home Assistant.",
   "test_title": "Instructor Radar",
   "test_message": "Test: dit toestel krijgt meldingen van Instructor Radar.",
   "reminder_title": "Over {minutes} min: {label}",

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- No notifications at all until a user sets them up in **Settings › My notifications** (schedule changes no
+  longer appear as a notification in Home Assistant when nobody has).
+
 - Appointments without a student (e.g. free time "Beschikbaar voor rijlessen") show their title instead of
   "Appointment", in a neutral grey card. Lessons never use the planner's title (it contains the student's phone).
 - Settings › My notifications: an example of the reminder and of the morning summary, in your language.
