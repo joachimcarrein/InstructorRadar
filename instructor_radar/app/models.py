@@ -28,9 +28,14 @@ class Transmission(StrEnum):
 
 class Status(StrEnum):
     PLANNED = "planned"
-    CONFIRMED = "confirmed"
+    TENTATIVE = "tentative"  # booked "onder voorbehoud" (provisionally) in the planner
     DONE = "done"
     CANCELLED = "cancelled"
+
+    @classmethod
+    def _missing_(cls, value):
+        # Stored by older versions, which wrongly mapped the planner's provisional flag to "confirmed".
+        return cls.TENTATIVE if value == "confirmed" else None
 
 
 @dataclass(frozen=True)
@@ -154,7 +159,7 @@ class StudentInfo:
                 continue
             if h.status == Status.DONE:
                 driven += measure(h)
-            elif h.status in (Status.PLANNED, Status.CONFIRMED):
+            elif h.status in (Status.PLANNED, Status.TENTATIVE):
                 planned += measure(h)
         return driven, planned
 
@@ -177,7 +182,7 @@ class StudentInfo:
             earlier = [h for h in self.history if (h.date, h.start) < limit]
         else:
             earlier = [h for h in self.history if h.date < before]
-        counted = (Status.DONE, Status.PLANNED, Status.CONFIRMED)
+        counted = (Status.DONE, Status.PLANNED, Status.TENTATIVE)
         past = [h for h in earlier if h.status in counted and h.kind == Kind.LESSON]
         if not past:
             return "first"

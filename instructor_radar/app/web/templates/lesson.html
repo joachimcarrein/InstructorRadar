@@ -30,7 +30,7 @@
       <span class="h-date">{{ t.weekdays[h.date.weekday()] }} {{ h.date.strftime("%d/%m/%y") }}{% if h.start %} {{ h.start }}{% endif %}</span>
       <span class="h-who">{{ t("with_you") if h.mine else h.instructor }}</span>
       {% if h.kind.value == 'exam' %}<span class="h-kind">{{ t("exam_n", sequence=h.sequence) if h.sequence else t("exam") }}</span>{% if h.result %}<span class="h-result {{ h.result }}">{{ t("exam_" + h.result) }}</span>{% endif %}{% elif h.sequence %}<span class="h-kind">{{ t("lesson", sequence=h.sequence) }}</span>{% endif %}
-      {% if item.current %}<span class="badge cur">{{ t("this_lesson") }}</span>{% elif h.status.value in ('planned', 'confirmed') %}<span class="h-planned">{{ t("planned") }}</span>{% endif %}
+      {% if item.current %}<span class="badge cur">{{ t("this_lesson") }}</span>{% elif h.status.value in ('planned', 'tentative') %}<span class="h-planned">{{ t("planned") }}</span>{% endif %}
       {% if h.status.value == 'cancelled' %}<span class="h-cancel">{{ t("cancelled") }}{% if h.cancel_reason %}: {{ h.cancel_reason }}{% endif %}</span>{% endif %}
     </li>
     {% endfor %}

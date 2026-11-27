@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Lessons the planner books **onder voorbehoud** (provisionally) appear as *tentative* in the calendar feed. They
+  used to be marked as confirmed: the planner's flag means the opposite of its name.
+
 ## 2026.11.5
 
 - **Student names and ages are kept once per student** instead of on every lesson and every change. Switching
