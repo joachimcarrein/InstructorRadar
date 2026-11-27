@@ -2,9 +2,10 @@
 
 ## Unreleased
 
-- Lesson details: the student's driving hours (driven + planned, from their lessons; exams and cancelled lessons do
-  not count), and all their lessons including future ones, with the opened lesson marked. Hours appear after the
-  student's next history refresh (the first fetch of a day).
+- Lesson details: the student's number of lessons (in lesson units, "11-12" = 2) and driving hours, both as
+  driven + planned; exams and cancelled lessons do not count. Hours appear after the student's next history refresh
+  (the first fetch of a day).
+- Lesson details: all the student's lessons including future ones, with the opened lesson marked.
 - Week view on a computer: the lesson number or "Exam" is shown on the same line as the time.
 - iPhone: no more focus ring around the close button when the lesson details open.
 

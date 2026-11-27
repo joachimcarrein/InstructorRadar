@@ -58,5 +58,6 @@
   "language_name": "English",
   "practice_hours": "Driving hours",
   "practice_detail": "{total} ({driven} driven, {planned} planned)",
-  "this_lesson": "this lesson"
+  "this_lesson": "this lesson",
+  "lesson_total": "Number of lessons"
 }

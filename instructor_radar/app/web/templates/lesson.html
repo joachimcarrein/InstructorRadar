@@ -8,6 +8,7 @@
     <dt>{{ t("licence") }}</dt><dd>{{ licence }}</dd>
     {% if lesson.location %}<dt>{{ t("location") }}</dt><dd>{{ lesson.location }}</dd>{% endif %}
     {% if card.student %}<dt>{{ t("student") }}</dt><dd>{{ card.student }}</dd>{% endif %}
+    {% if lesson_total %}<dt>{{ t("lesson_total") }}</dt><dd>{{ lesson_total }}</dd>{% endif %}
     {% if practice %}<dt>{{ t("practice_hours") }}</dt><dd>{{ practice }}</dd>{% endif %}
   </dl>
   <p class="c-badges">

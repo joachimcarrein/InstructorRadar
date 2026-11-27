@@ -58,5 +58,6 @@
   "language_name": "Nederlands",
   "practice_hours": "Uren praktijk",
   "practice_detail": "{total} ({driven} gereden, {planned} gepland)",
-  "this_lesson": "deze les"
+  "this_lesson": "deze les",
+  "lesson_total": "Aantal lessen"
 }

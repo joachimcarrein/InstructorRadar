@@ -58,5 +58,6 @@
   "language_name": "Français",
   "practice_hours": "Heures de pratique",
   "practice_detail": "{total} ({driven} effectuées, {planned} prévues)",
-  "this_lesson": "cette leçon"
+  "this_lesson": "cette leçon",
+  "lesson_total": "Nombre de leçons"
 }
