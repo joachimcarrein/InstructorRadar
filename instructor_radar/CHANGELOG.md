@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.11.4
+
 - **First lesson** / **New to you** also count earlier lessons that are still planned: lesson 3-4 the day after a
   planned lesson 1-2 is no longer marked as a first lesson.
 
