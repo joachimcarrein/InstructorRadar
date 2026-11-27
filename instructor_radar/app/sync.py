@@ -17,12 +17,12 @@ from zoneinfo import ZoneInfo
 import aiohttp
 
 from .config import Options
-from .diff import Change, diff, to_notify
+from .diff import Change, diff
 from .ha import ERROR_NOTIFICATION_ID, HomeAssistant
 from .i18n import Translator
 from .ics import build_calendar
 from .models import Lesson
-from .present import one_line, when
+from .notifier import Notifier
 from .providers import (
     Credentials,
     FetchSettings,
@@ -33,6 +33,7 @@ from .providers import (
     ProviderError,
 )
 from .scheduler import BUSY_RETRY, manual_allowed
+from .settings import SharedSettings
 from .store import RunInfo, State, Store, StudentRecord, apply_privacy, prune, week_start
 from .users import UserSettings
 
@@ -42,8 +43,6 @@ RUN_TIMEOUT = 60  # seconds for the whole planner conversation (logout excluded)
 REQUEST_TIMEOUT = 20
 LOGOUT_TIMEOUT = 10
 MAX_STUDENTS_PER_RUN = 40
-MAX_NOTIFY_LINES = 10
-CHANGES_NOTIFICATION_ID = "instructor_radar_changes"
 USER_AGENT = "Mozilla/5.0 (compatible; InstructorRadar; +https://github.com/joachimcarrein/InstructorRadar)"
 
 
@@ -57,8 +56,11 @@ class Radar:
         tz: ZoneInfo,
         clock: Callable[[], dt.datetime] | None = None,
         users: UserSettings | None = None,
+        settings: SharedSettings | None = None,
     ):
         self.options = options
+        self.settings = settings or SharedSettings()
+        self.settings_store = None  # set by __main__; the Settings page saves through it
         self.store = store
         self.ha = ha
         self.provider = provider
@@ -70,8 +72,9 @@ class Radar:
         self.retry_at: dt.datetime | None = None
         self._lang: str | None = None
         self.state: State = apply_privacy(
-            prune(store.load(), self.now().date()), options.include_student_name, options.include_student_age
+            prune(store.load(), self.now().date()), self.settings.include_student_name, self.settings.include_student_age
         )
+        self.notifier = Notifier(self)
 
     def now(self) -> dt.datetime:
         return self._clock()
@@ -108,7 +111,7 @@ class Radar:
         now = self.now()
         self.last_attempt = now
         today = now.date()
-        window_start, window_end = week_start(today), today + dt.timedelta(days=self.options.days_ahead)
+        window_start, window_end = week_start(today), today + dt.timedelta(days=self.settings.days_ahead)
         previous = self.state.run
         started = time.monotonic()
         session = PlannerSession(
@@ -118,7 +121,7 @@ class Radar:
                 cookie_jar=aiohttp.CookieJar(),
             ),
             base_url=self.options.base_url,
-            settings=FetchSettings(self.options.include_student_name, self.options.include_student_age),
+            settings=FetchSettings(self.settings.include_student_name, self.settings.include_student_age),
         )
         credentials = Credentials(
             self.options.username, self.options.password, self.options.auth_mode, self.options.totp_secret
@@ -203,7 +206,7 @@ class Radar:
         return students, refreshed
 
     def _with_age(self, lesson: Lesson, students: dict[str, StudentRecord]) -> Lesson:
-        if not self.options.include_student_age or lesson.student_key not in students:
+        if not self.settings.include_student_age or lesson.student_key not in students:
             return lesson
         return replace(lesson, student_age=students[lesson.student_key].info.age)
 
@@ -242,26 +245,15 @@ class Radar:
         return self.state.run
 
     async def _notify_changes(self, changes: list[Change], now: dt.datetime) -> None:
-        relevant = to_notify(changes, now.date(), self.options.notify_changes_days, now.replace(tzinfo=None))
-        if not relevant:
-            return
-        t = Translator(await self.language())
-        lines = []
-        for c in relevant[:MAX_NOTIFY_LINES]:
-            if c.type == "added":
-                lines.append(t("notify_added", lesson=one_line(c.lesson, t)))
-            elif c.type == "removed":
-                lines.append(t("notify_removed", lesson=one_line(c.lesson, t)))
-            else:
-                lines.append(t("notify_changed", lesson=one_line(c.lesson, t), before=when(c.before, t)))
-        if len(relevant) > MAX_NOTIFY_LINES:
-            lines.append("…")
-        message = "\n".join(lines)
-        if self.options.notify_service:
-            await self.ha.notify(self.options.notify_service, t("notify_title"), message)
-        else:
-            await self.ha.persistent_notification(t("notify_title"), message, CHANGES_NOTIFICATION_ID)
-        log.info("Change notification sent (%d changes)", len(relevant))
+        await self.notifier.changes(changes, now)
+
+    def update_settings(self, settings: SharedSettings) -> None:
+        """Apply new shared settings; switching names/ages off removes them from the stored state right away."""
+        self.settings = settings
+        self.state = apply_privacy(self.state, settings.include_student_name, settings.include_student_age)
+        self.store.save(self.state)
+        if self.settings_store is not None:
+            self.settings_store.save(settings)
 
     # ------------------------------------------------------------------ outputs
 

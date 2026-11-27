@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block main %}
+<h1 class="page-title">{{ t("settings") }}</h1>
+
+<form class="panel" data-ajax="settings/shared">
+  <h2>{{ t("settings_shared") }}</h2>
+  <label class="field">
+    <span>{{ t("settings_days_ahead") }}</span>
+    <input type="number" name="days_ahead" min="1" max="60" value="{{ shared.days_ahead }}" required>
+    <small>{{ t("settings_days_ahead_help") }}</small>
+  </label>
+  <label class="field">
+    <span>{{ t("settings_fetch_times") }}</span>
+    <input type="text" name="fetch_times" value="{{ fetch_times }}" required>
+    <small>{{ t("settings_fetch_times_help") }}</small>
+  </label>
+  <label class="check"><input type="checkbox" name="include_student_name" value="on"{{ " checked" if shared.include_student_name }}> {{ t("settings_names") }}</label>
+  <label class="check"><input type="checkbox" name="include_student_age" value="on"{{ " checked" if shared.include_student_age }}> {{ t("settings_ages") }}</label>
+  <small>{{ t("settings_names_help") }}</small>
+  <div class="actions"><button type="submit" class="primary">{{ t("save") }}</button></div>
+</form>
+
+{% if can_notify %}
+<form class="panel" data-ajax="settings/notify">
+  <h2>{{ t("settings_mine") }}</h2>
+  <fieldset>
+    <legend>{{ t("settings_devices") }}</legend>
+    {% if services is none %}
+    <p class="muted">{{ t("settings_devices_unavailable") }}</p>
+    {% for d in prefs.devices or [] %}<input type="hidden" name="devices" value="{{ d }}">{% endfor %}
+    {% elif not services %}
+    <p class="muted">{{ t("settings_devices_none") }}</p>
+    {% else %}
+    {% for s in services %}
+    <label class="check"><input type="checkbox" name="devices" value="{{ s }}"{{ " checked" if s in selected }}> {{ s }}</label>
+    {% endfor %}
+    <small>{{ t("settings_devices_help") }}</small>
+    {% endif %}
+  </fieldset>
+
+  <div class="option">
+    <label class="check"><input type="checkbox" name="changes" value="on"{{ " checked" if prefs.changes }}> {{ t("settings_changes") }}</label>
+    <span class="inline"><input type="number" name="changes_days" min="1" max="14" value="{{ prefs.changes_days }}" required> {{ t("settings_days") }}</span>
+    <small>{{ t("settings_changes_help") }}</small>
+  </div>
+  <div class="option">
+    <label class="check"><input type="checkbox" name="reminder" value="on"{{ " checked" if prefs.reminder }}> {{ t("settings_reminder") }}</label>
+    <span class="inline"><input type="number" name="reminder_minutes" min="5" max="240" value="{{ prefs.reminder_minutes }}" required> {{ t("settings_minutes") }}</span>
+  </div>
+  <div class="option">
+    <label class="check"><input type="checkbox" name="summary" value="on"{{ " checked" if prefs.summary }}> {{ t("settings_summary") }}</label>
+    <span class="inline">{{ t("settings_at") }} <input type="time" name="summary_time" value="{{ prefs.summary_time.strftime('%H:%M') }}" required></span>
+    <small>{{ t("settings_summary_help") }}</small>
+  </div>
+  {% if nobody %}<p class="muted">{{ t("settings_fallback") }}</p>{% endif %}
+  <div class="actions">
+    <button type="submit" class="primary">{{ t("save") }}</button>
+    <button type="button" data-test="settings/test">{{ t("settings_test") }}</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

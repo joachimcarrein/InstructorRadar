@@ -73,10 +73,14 @@ async def test_change_detected_between_runs_and_notified(make_radar):
     assert len(notes) == 1 and "Geannuleerd" in notes[0][2]
 
 
-async def test_notify_service_used_when_set(make_radar):
-    radar, planner = await make_radar(notify_service="mobile_app_phone")
+async def test_changes_go_to_the_users_devices(make_radar):
+    from app.settings import NotifyPrefs
+
+    radar, planner = await make_radar()
+    radar.users.set_notify("u1", NotifyPrefs(devices=("notify.mobile_app_phone",)))
     await radar.run()
     planner.events[0]["location"] = "02"
     radar.test_clock["now"] = NOW + dt.timedelta(hours=1)
     await radar.run()
     assert [c for c in radar.ha.calls if c[0] == "notify" and c[1] == "mobile_app_phone"]
+    assert not [c for c in radar.ha.calls if c[0] == "persistent_notification" and c[3] == "instructor_radar_changes"]

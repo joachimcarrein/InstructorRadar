@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Settings inside the app.** *For everyone*: days ahead, fetch times, show student names and ages (these were add-on
+  options). *My notifications*, per Home Assistant user like in MedStock: the devices (Companion app phones
+  suggested), schedule changes (days ahead), a **reminder before each lesson** and a **morning summary**, plus a test
+  notification. The YAML examples for these are no longer needed.
+- The add-on configuration now holds only the planner login and the log level. The old values are carried over when
+  the Supervisor still provides them; check **Settings** once after updating. A former `notify_service` is not carried
+  over: pick your devices in **Settings › My notifications**.
+- Documentation: the internal calendar port (8100) is explained in its own section.
+
 - Lesson details: the student's number of lessons (in lesson units, "11-12" = 2) and driving hours, both as
   driven + planned; exams and cancelled lessons do not count. Hours appear after the student's next history refresh
   (the first fetch of a day).

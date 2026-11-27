@@ -61,13 +61,10 @@ async def test_switching_names_off_purges_stored_names(make_radar, tmp_path):
     await radar.run()
     assert "Testleerling" in radar.store.path.read_text(encoding="utf-8")
 
-    from app.config import Options
-    from app.sync import Radar
+    from app.settings import SharedSettings
 
-    off = Options(**{**radar.options.__dict__, "include_student_name": False, "include_student_age": False})
-    again = Radar(off, radar.store, radar.ha, radar.provider, radar.tz, clock=radar.now)
-    again.store.save(again.state)
-    text = again.store.path.read_text(encoding="utf-8")
+    radar.update_settings(SharedSettings(include_student_name=False, include_student_age=False))
+    text = radar.store.path.read_text(encoding="utf-8")
     assert "Testleerling" not in text
     assert '"age": 17' not in text
 
