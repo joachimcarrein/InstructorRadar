@@ -114,7 +114,7 @@ async def test_full_run_builds_history_and_familiarity(make_radar):
     lessons = sorted(radar.state.lessons.values(), key=lambda x: x.start)
     assert [x.kind for x in lessons] == [Kind.LESSON, Kind.LESSON, Kind.EXAM]
     assert lessons[0].location == "Centrum" and lessons[1].location == "Station Noord"
-    assert lessons[1].transmission == Transmission.AUTOMATIC and lessons[1].status == Status.CONFIRMED
+    assert lessons[1].transmission == Transmission.AUTOMATIC and lessons[1].status == Status.TENTATIVE
     record = radar.state.students[lessons[0].student_key]
     assert [h.date.isoformat() for h in record.info.history][:3] == ["2029-12-02", "2029-12-09", "2029-12-16"]
     assert record.info.familiarity(lessons[0].start.date()) == ""  # had a lesson with "IX" on 16/12

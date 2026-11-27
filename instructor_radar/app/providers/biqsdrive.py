@@ -289,7 +289,8 @@ def _check_login_response(status: int, location: str | None, body: str) -> tuple
     """Raise when the login did not succeed. Returns the session seats (max, used) when the planner reports them."""
     if status in (301, 302, 303):
         code = _error_code(location)
-        # TODO(verify): which ?e=<code> values exist; ?e=14 was seen for "not logged in / failed".
+        # Verified 2026-11-27: wrong credentials answer HTTP 200 with the login form (no redirect, no code), so a
+        # redirect here is unexpected; ?e=14 was seen for "not logged in".
         raise LoginFailed(
             "The planner refused the login"
             + (f" (code {code})" if code else "")
@@ -300,14 +301,14 @@ def _check_login_response(status: int, location: str | None, body: str) -> tuple
     seats = _parse_seats(body)
     if _login_succeeded(body):
         if seats and seats[1] >= seats[0]:
-            # TODO(verify): when all sessions are in use, does the planner refuse us or end the oldest session?
-            # Logged so the behaviour can be learned from the log (counts only).
+            # Not verified on purpose (it would lock out the instructor): when all sessions are in use, does the
+            # planner refuse us or end the oldest session? Logged so the behaviour can be learned (counts only).
             log.warning("All %d planner sessions were already in use at login", seats[0])
         return seats
     if _has_captcha(body):
         raise CaptchaRequired(_CAPTCHA_MSG)
     if seats and seats[1] >= seats[0]:
-        # TODO(verify): exact page shown when the session limit refuses a login.
+        # Not verified on purpose (see above): the exact page shown when the session limit refuses a login.
         raise PlannerBusy(f"All {seats[0]} planner sessions of this account are in use.")
     raise LoginFailed("The planner refused the login. Check username, password and 2FA in the add-on configuration.")
 
@@ -360,8 +361,9 @@ def _sequence(value: Any) -> str:
 
 
 def _status(raw: dict) -> Status:
-    # TODO(verify): only statusConfirmed "0" seen so far; "1" assumed to mean confirmed.
-    return Status.CONFIRMED if str(raw.get("statusConfirmed")) == "1" else Status.PLANNED
+    # Verified 2026-11-27 in the planner's calendar script: statusConfirmed == 1 renders as "(Onder voorbehoud)",
+    # a provisional booking. Despite its name it does not mean confirmed; "0" is an ordinary booking.
+    return Status.TENTATIVE if str(raw.get("statusConfirmed")) == "1" else Status.PLANNED
 
 
 def _to_lesson(raw: dict, locations: dict[str, str], session: PlannerSession, students: dict[str, str]) -> Lesson | None:
@@ -443,7 +445,8 @@ def _rows(data: Any) -> list[dict]:
 
 
 def _needs_reason_lookup(data: Any) -> bool:
-    # TODO(verify): cancel_reason may be text or an id of get_deleteReasons; look it up only when it is numeric.
+    # Verified 2026-11-27: cancel_reason is the reason text ("Annulatie Rijschool", "Tijdig geannuleerd"). A numeric
+    # value (an id of get_deleteReasons) was never seen; it is looked up only in that case, as a fallback.
     return any(str(r.get("cancel_reason") or "").isdigit() for r in _rows(data))
 
 
@@ -490,7 +493,8 @@ def _to_history(row: dict, own_instructor_ids: set[str], reasons: dict[str, str]
         date = parsed.date()
     reason = str(row.get("cancel_reason") or "").strip()
     reason = reasons.get(reason, reason)
-    # TODO(verify): meaning of event_status codes; cancellation is detected from cancel_reason for now.
+    # Verified 2026-11-27: event_status "1" = normal, "2" = cancelled (always with a cancel_reason); some rows have
+    # no event_status. Cancellation is detected from cancel_reason, which covers every "2" seen.
     if reason:
         status = Status.CANCELLED
     elif str(row.get("isFutureAppointment")) == "1":
