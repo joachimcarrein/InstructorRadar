@@ -64,13 +64,8 @@ def _raw(**kw):
 
 def test_options_defaults():
     o = parse_options(_raw())
-    assert o.fetch_times == (dt.time(6), dt.time(22))
-    assert o.days_ahead == 14 and o.notify_changes_days == 2
-    assert not o.include_student_name and not o.include_student_age
-
-
-def test_options_strip_notify_prefix():
-    assert parse_options(_raw(notify_service="notify.mobile_app_phone")).notify_service == "mobile_app_phone"
+    assert o.auth_mode == "none" and o.log_level == "info"
+    assert not hasattr(o, "fetch_times")  # moved into the app (Settings)
 
 
 @pytest.mark.parametrize(
@@ -79,9 +74,6 @@ def test_options_strip_notify_prefix():
         {"base_url": "http://school.example.invalid"},
         {"auth_mode": "sms"},
         {"auth_mode": "totp"},
-        {"days_ahead": 0},
-        {"notify_changes_days": 30},
-        {"notify_service": "notify.Bad Name"},
         {"password": ""},
     ],
 )

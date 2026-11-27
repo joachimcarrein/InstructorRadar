@@ -57,6 +57,30 @@
     });
   }
 
+  // Settings forms: saved with fetch() and a custom header (a cross-site form post cannot add it).
+  async function post(url, body) {
+    const res = await fetch(base + url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-Requested-With": "fetch" },
+      body: body,
+    });
+    return res.json();
+  }
+  document.querySelectorAll("form[data-ajax]").forEach((form) => {
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const data = await post(form.dataset.ajax, new URLSearchParams(new FormData(form)));
+      showToast(data.message);
+    });
+  });
+  document.querySelectorAll("button[data-test]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const data = await post(button.dataset.test, new URLSearchParams());
+      showToast(data.message);
+    });
+  });
+
   // Fetch now, then poll the status until the run is done.
   const button = document.getElementById("fetch-now");
   if (button) {

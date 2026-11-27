@@ -19,17 +19,18 @@ moved or cancelled.
 
 1. **Settings › Apps › App store › ⋮ › Repositories**, add `https://github.com/joachimcarrein/InstructorRadar`.
 2. Install **Instructor Radar** (a prebuilt image is downloaded).
-3. Open the **Configuration** tab, fill in the options below and save.
+3. Open the **Configuration** tab, fill in your planner login (see *Add-on configuration*) and save.
 4. Start it and enable **Show in sidebar**.
+5. Open the app and set it up in **Settings** (fetch times, names, notifications).
 
-The very first start fetches once, so the schedule is not empty. After that it only fetches at the configured times.
+The very first start fetches once, so the schedule is not empty. After that it only fetches at the fetch times set in **Settings**.
 
 ## Important: the planner's session limit
 
 The planner allows only a few simultaneous sessions per account (biqsDRIVE reports 2 for a typical account). Every
 fetch logs in, reads what it needs, and **logs out right away** (usually within a few seconds). Still:
 
-- **Fetch outside working hours.** The defaults are 06:00 and 22:00. If you add fetch times during the day, a fetch
+- **Fetch outside working hours.** The defaults are 06:00 and 22:00 (**Settings › For everyone**). If you add fetch times during the day, a fetch
   may take a session slot while you or the office are using the planner.
 - **When all sessions are in use**, Instructor Radar does not fight for one: it keeps the schedule it already has,
   shows *Planner busy* and tries once more after 15 minutes, then waits for the next fetch time.
@@ -37,7 +38,9 @@ fetch logs in, reads what it needs, and **logs out right away** (usually within 
 - A **refused login** (wrong password, 2FA, captcha) raises a notification in Home Assistant and is **not retried**
   until the next fetch time, so the account cannot get locked by repeated attempts.
 
-## Configuration
+## Add-on configuration
+
+The add-on's **Configuration** tab holds only the planner login. Everything else is set inside the app.
 
 | Option | Default | Meaning |
 |---|---|---|
@@ -46,13 +49,40 @@ fetch logs in, reads what it needs, and **logs out right away** (usually within 
 | `username`, `password` | – | Your planner login. Stored only in the add-on options. |
 | `auth_mode` | `none` | `none` (no 2FA), `totp` (2FA with an authenticator app), `manual` (not implemented yet). |
 | `totp_secret` | – | For `totp`: the secret key of the authenticator (the text behind the QR code). |
-| `days_ahead` | `14` | How many days after today to fetch. The current week (from Monday) is always included. |
-| `fetch_times` | `06:00`, `22:00` | When to fetch (local time). Keep them outside working hours (see above). |
-| `include_student_name` | `false` | Show student names in the schedule, the calendar and notifications. |
-| `include_student_age` | `false` | Show the student's age next to the name. |
-| `notify_changes_days` | `2` | Notify about changes to lessons from today up to this many days ahead (2 = today and tomorrow). `0` = off. |
-| `notify_service` | – | e.g. `notify.mobile_app_my_phone`. Empty = a persistent notification in Home Assistant. |
 | `log_level` | `info` | `debug` for troubleshooting (still no lesson details in the log). |
+
+## Settings (in the app)
+
+### For everyone
+
+| Setting | Default | Meaning |
+|---|---|---|
+| Days ahead to fetch | 14 | The current week (from Monday) is always included. |
+| Fetch times | 06:00, 22:00 | Local times, separated by commas. Keep them outside working hours (see above). A change applies right away. |
+| Show student names | off | In the schedule, the calendar and notifications. |
+| Show student ages | off | Next to the name. |
+
+Switching names or ages **off** removes the stored ones right away; switching them **on** shows them after the next
+fetch.
+
+### My notifications
+
+Each Home Assistant user chooses their own, like in MedStock:
+
+- **Devices**: the `notify.*` services of Home Assistant. The phones of the Companion app are listed first and are
+  ticked until you save once.
+- **Schedule changes** (on by default): new, moved or cancelled lessons from today up to *N* days ahead (default 2 =
+  today and tomorrow), noticed at a fetch.
+- **Reminder before each lesson** (off by default): *N* minutes before the start (default 30).
+- **Morning summary** (off by default): today's lessons at a time of your choice (default 06:30; choose a time after
+  a fetch time). Nothing is sent on a day without lessons.
+- **Send test notification** sends a test to the devices you saved.
+
+Notifications are written in your language (see *Language*). Reminders and summaries are sent at most 30 minutes late
+(for example after a restart), never later, and only once. They use the schedule of the last fetch, so a lesson
+cancelled since then is still reminded (see *Changes during the day*).
+
+As long as **nobody** has set up notifications, schedule changes appear as a notification in Home Assistant itself.
 
 ## Using it
 
@@ -72,72 +102,38 @@ cancelled lesson, the reason. On a phone the week becomes a list per day that op
 **Changes** lists what changed this week (new, moved, removed), with when it was noticed. Older weeks are removed
 automatically: Instructor Radar keeps the current week and what lies ahead, nothing else.
 
-**Language**: the menu at the top (English, Nederlands, Français). *Automatic* follows your browser or app language
-(Belgian Dutch gets Belgian words). Notifications use the language of the last person who opened the app, or Home
-Assistant's language before anyone has.
+**Language**: the menu at the top, per Home Assistant user (English, Nederlands, Français). *Automatic* follows your browser or app language
+(Belgian Dutch gets Belgian words). Your notifications use your language; notifications shown in Home Assistant itself use the language of the
+last person who opened the app, or Home Assistant's language before anyone has.
 
-### Calendar in Home Assistant (Remote Calendar)
+### Calendar entity in Home Assistant (optional)
 
-Instructor Radar serves an iCalendar feed on port 8100 **inside** Home Assistant's internal network. The port is not
-opened on your host or your network.
+You do not need this for the schedule or the notifications above. It is for when you want the lessons as a
+**calendar entity** in Home Assistant, e.g. on a dashboard calendar card or in your own automations.
+
+**What it is.** Instructor Radar offers the schedule as an iCalendar feed on port **8100**. That port lives only on
+Home Assistant's internal network (the network between Home Assistant and its add-ons):
+
+- it is **not** opened on your Home Assistant host, your home network or the internet (the port is not listed in the
+  add-on's *Network* settings and cannot be mapped);
+- only Home Assistant itself can read it; every other caller is refused;
+- it contains the same lessons as the schedule page (student names only when *Show student names* is on);
+- it is never written to `/config/www`, because everything under `/local` can be read without logging in.
+
+Because it is internal, you **cannot** subscribe to it from your phone's agenda app (see FUTURE_IDEAS.md in the
+repository).
+
+**Set it up:**
 
 1. Find the add-on's hostname on its **Info** tab (e.g. `a0d7b954-instructor-radar`).
 2. **Settings › Devices & services › Add integration › Remote Calendar**, name it `Instructor Radar` and use the URL
    `http://<hostname>:8100/calendar.ics`.
 
-You now have `calendar.instructor_radar`. Its events are titled like `Les 7 – B manueel – Centrum` (with the student
-name only when `include_student_name` is on). The feed is never written to `/config/www`, because everything under
-`/local` can be read without logging in.
+You now have `calendar.instructor_radar`, with events titled like `Les 7 – B manueel – Centrum`.
 
-Adding the feed to your phone's own agenda app is not possible yet (it would need an address reachable from outside
-your network); see FUTURE_IDEAS.md in the repository.
+### Fetch now from an automation
 
-### Automations
-
-A reminder 30 minutes before each lesson:
-
-```yaml
-alias: "Instructor Radar: lesson in 30 minutes"
-triggers:
-  - trigger: calendar
-    event: start
-    offset: "-0:30:0"
-    entity_id: calendar.instructor_radar
-actions:
-  - action: notify.mobile_app_my_phone
-    data:
-      title: "{{ (trigger.calendar_event.start | as_datetime | as_local).strftime('%H:%M') }} {{ trigger.calendar_event.summary }}"
-      message: "{{ trigger.calendar_event.location }}"
-```
-
-A morning summary (after the 06:00 fetch):
-
-```yaml
-alias: "Instructor Radar: today's lessons"
-triggers:
-  - trigger: time
-    at: "06:30:00"
-actions:
-  - action: calendar.get_events
-    target:
-      entity_id: calendar.instructor_radar
-    data:
-      duration:
-        hours: 18
-    response_variable: agenda
-  - variables:
-      events: "{{ agenda['calendar.instructor_radar'].events }}"
-  - condition: template
-    value_template: "{{ events | count > 0 }}"
-  - action: notify.mobile_app_my_phone
-    data:
-      title: "Today: {{ events | count }} lesson(s)"
-      message: >-
-        {% for e in events %}{{ (e.start | as_datetime | as_local).strftime('%H:%M') }} {{ e.summary }}
-        {% endfor %}
-```
-
-Fetch now from an automation or script (counts against the planner's session limit, see above):
+Counts against the planner's session limit (see above):
 
 ```yaml
 action: hassio.addon_stdin
@@ -179,11 +175,12 @@ The schedule in Instructor Radar catches up at the next fetch time.
   birthdates and ID numbers are dropped inside the planner module before anything is stored, shown or logged.
 - For the student history (and age) the planner's student page is read; only the birthdate (to calculate the age)
   and the lesson list are used, the rest is discarded at once.
-- Turning `include_student_name` or `include_student_age` off removes stored names and ages at the next start.
+- Switching *Show student names* or *Show student ages* off removes the stored names and ages right away.
 - The log contains counts only (lessons, changes, requests), never lesson or student details, never your password.
 - Nothing is sent anywhere except to your planner and to Home Assistant itself. No telemetry.
 - Data lives in the add-on's `/data` folder (part of Home Assistant backups): `state.json` (schedule from this week's
-  Monday, history of the students in it, change log) and `users.json` (language per Home Assistant user).
+  Monday, history of the students in it, change log), `settings.json` (the settings for everyone) and `users.json`
+  (per Home Assistant user: language, notification devices and choices, which reminders were sent).
 
 ## Troubleshooting
 
@@ -194,6 +191,7 @@ The schedule in Instructor Radar catches up at the next fetch time.
 | *Planner busy* | All sessions were in use. Nothing to do; the next fetch will catch up. Consider quieter fetch times. |
 | *HTML instead of JSON* / *looks different than expected* | The planner changed. Open an issue (without personal data) with the log. |
 | Calendar entity stays empty | Check the hostname and port `8100` in the Remote Calendar URL. |
+| No notifications on my phone | **Settings › My notifications**: tick the phone, **Save**, then **Send test notification**. |
 
 ## Limitations
 

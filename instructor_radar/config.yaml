@@ -20,6 +20,7 @@ stdin: true
 backup: hot
 # Port 8100 (calendar feed for the Remote Calendar integration) is reached over the internal network only and is
 # deliberately not listed under `ports`, so it is never mapped to the host.
+# Only the planner login lives here; everything else is set inside the app (Settings).
 options:
   provider: biqsdrive
   base_url: ""
@@ -27,14 +28,6 @@ options:
   password: ""
   auth_mode: none
   totp_secret: ""
-  days_ahead: 14
-  fetch_times:
-    - "06:00"
-    - "22:00"
-  include_student_name: false
-  include_student_age: false
-  notify_changes_days: 2
-  notify_service: ""
   log_level: info
 schema:
   provider: list(biqsdrive)
@@ -43,11 +36,4 @@ schema:
   password: password
   auth_mode: list(none|totp|manual)
   totp_secret: password?
-  days_ahead: int(1,60)
-  fetch_times:
-    - match(^([01][0-9]|2[0-3]):[0-5][0-9]$)
-  include_student_name: bool
-  include_student_age: bool
-  notify_changes_days: int(0,14)
-  notify_service: str?
   log_level: list(trace|debug|info|warning|error)?

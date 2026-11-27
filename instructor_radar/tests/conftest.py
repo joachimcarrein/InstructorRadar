@@ -13,8 +13,10 @@ from aiohttp import web
 from app.config import Options
 from app.ha import FakeHomeAssistant
 from app.providers import get_provider
+from app.settings import SharedSettings
 from app.store import Store
 from app.sync import Radar
+from app.users import UserSettings
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TZ = ZoneInfo("Europe/Brussels")
@@ -109,19 +111,21 @@ class FakePlanner:
 
 @pytest.fixture
 def make_radar(aiohttp_server, tmp_path):
-    async def factory(mode: str = "ok", **option_overrides):
+    async def factory(mode: str = "ok", **overrides):
         planner = FakePlanner(mode)
         server = await aiohttp_server(planner.app())
+        shared_keys = set(SharedSettings().to_dict())
         options = Options(
             provider="biqsdrive",
             base_url=str(server.make_url("")).rstrip("/"),
             username="fake-user",
             password="fake-password",
-            **option_overrides,
+            **{k: v for k, v in overrides.items() if k not in shared_keys},
         )
+        settings = SharedSettings(**{k: v for k, v in overrides.items() if k in shared_keys})
         clock = {"now": NOW}
         radar = Radar(options, Store(tmp_path / "state.json"), FakeHomeAssistant(), get_provider("biqsdrive"), TZ,
-                      clock=lambda: clock["now"])
+                      clock=lambda: clock["now"], users=UserSettings(tmp_path / "users.json"), settings=settings)
         radar.test_clock = clock
         return radar, planner
 

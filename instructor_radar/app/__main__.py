@@ -19,16 +19,18 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from aiohttp import web
 
 from . import __version__
-from .config import ConfigError, Options, load_options
+from .config import ConfigError, Options, load_options, load_raw
 from .ha import FakeHomeAssistant, from_environment
 from .providers import get_provider
 from .scheduler import is_fetch_command, next_run
+from .settings import SettingsStore, SharedSettings, from_legacy_options
 from .store import Store
 from .sync import Radar
 from .users import UserSettings
 from .web.server import calendar_app, ui_app
 
 UI_PORT = 8099
+TICK = 30  # seconds
 CALENDAR_PORT = 8100
 log = logging.getLogger("instructor_radar")
 
@@ -45,18 +47,39 @@ def _timezone() -> ZoneInfo:
 
 
 def _demo_options() -> Options:
-    return Options(provider="demo", base_url="https://demo.invalid", username="demo", password="demo",  # noqa: S106
-                   include_student_name=True, include_student_age=True)
+    return Options(provider="demo", base_url="https://demo.invalid", username="demo", password="demo")  # noqa: S106
+
+
+def _shared_settings(store: SettingsStore, data_dir: Path, demo: bool) -> SharedSettings:
+    """Load the in-app settings; on the first start carry over the options of version 2026.11.0."""
+    if store.exists():
+        return store.load()
+    if demo:
+        settings = SharedSettings(include_student_name=True, include_student_age=True)
+    else:
+        try:
+            settings = from_legacy_options(load_raw(data_dir / "options.json"))
+        except ConfigError:
+            settings = SharedSettings()
+    store.save(settings)
+    return settings
 
 
 async def _scheduler(radar: Radar) -> None:
+    """Every TICK: fetch when a fetch time passed (the times can change in Settings), then reminders/summaries."""
+    since = radar.now()
     while True:
+        await asyncio.sleep(TICK)
         now = radar.now()
-        planned = next_run(now, radar.options.fetch_times)
-        retry = radar.retry_at
-        target, reason = (retry, "retry") if retry and retry < planned else (planned, "scheduled")
-        await asyncio.sleep(max(1.0, (target - radar.now()).total_seconds()))
-        await radar.run(reason)
+        due = next_run(since, radar.settings.fetch_times) <= now
+        retry = radar.retry_at is not None and radar.retry_at <= now
+        since = now
+        try:
+            if due or retry:
+                await radar.run("scheduled" if due else "retry")
+            await radar.notifier.tick(radar.now())
+        except Exception:  # noqa: BLE001 - the loop must survive anything
+            log.exception("Scheduler error")
 
 
 async def _stdin(radar: Radar) -> None:
@@ -97,10 +120,13 @@ async def main() -> None:
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)  # URLs may carry lesson ids
     tz = _timezone()
     ha = FakeHomeAssistant() if args.demo else from_environment()
+    settings_store = SettingsStore(data_dir / "settings.json")
     radar = Radar(options, Store(data_dir / "state.json"), ha, get_provider(options.provider), tz,
-                  users=UserSettings(data_dir / "users.json"))
+                  users=UserSettings(data_dir / "users.json"),
+                  settings=_shared_settings(settings_store, data_dir, args.demo))
+    radar.settings_store = settings_store
     log.info("Instructor Radar %s, provider %s, time zone %s, fetch times %s", __version__, options.provider, tz.key,
-             ", ".join(t.strftime("%H:%M") for t in options.fetch_times))
+             ", ".join(t.strftime("%H:%M") for t in radar.settings.fetch_times))
 
     runners = []
     for app, port in ((ui_app(radar, addon_mode), UI_PORT), (calendar_app(radar, addon_mode), CALENDAR_PORT)):

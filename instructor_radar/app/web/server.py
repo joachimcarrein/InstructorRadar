@@ -13,10 +13,12 @@ import jinja2
 from aiohttp import web
 
 from .. import __version__
+from ..config import ConfigError
 from ..i18n import Translator, language_names, pick_language
 from ..models import Kind, Lesson, StudentInfo
 from ..present import kind_label, licence_label, student_label
 from ..scheduler import next_run
+from ..settings import NotifyPrefs, SharedSettings
 from ..store import week_start
 from ..sync import Radar
 from ..users import UserSettings
@@ -146,7 +148,7 @@ def _card(lesson: Lesson, radar: Radar, t: Translator, changed: set[str]) -> dic
 
 def _status(radar: Radar, t: Translator) -> dict:
     run = radar.state.run
-    nxt = radar.retry_at or next_run(radar.now(), radar.options.fetch_times)
+    nxt = radar.retry_at or next_run(radar.now(), radar.settings.fetch_times)
     return {
         "code": run.status,
         "label": t(f"status_{run.status}"),
@@ -272,6 +274,75 @@ async def fetch_now(request: web.Request) -> web.Response:
     return web.json_response({"result": result, "message": messages[result]})
 
 
+async def settings_page(request: web.Request) -> web.Response:
+    c = _ctx(request)
+    radar, t = c["radar"], c["t"]
+    user = _user_id(request)
+    prefs = radar.users.notify(user) if radar.users and user else NotifyPrefs()
+    services = await radar.ha.notify_services()
+    if prefs.devices is None:  # never saved: suggest the phones
+        selected = {s for s in services or [] if s.startswith("notify.mobile_app_")}
+    else:
+        selected = set(prefs.devices)
+    return _render(
+        "settings.html",
+        **c,
+        shared=radar.settings,
+        fetch_times=", ".join(x.strftime("%H:%M") for x in radar.settings.fetch_times),
+        prefs=prefs,
+        services=services,
+        selected=selected,
+        can_notify=bool(radar.users and user),
+        nobody=not (radar.users and radar.users.recipients()),
+        status=_status(radar, t),
+        page="settings",
+    )
+
+
+def _ajax(request: web.Request) -> None:
+    if request.headers.get("X-Requested-With") != "fetch":
+        raise web.HTTPBadRequest()
+
+
+async def save_shared(request: web.Request) -> web.Response:
+    _ajax(request)
+    t = _ctx(request)["t"]
+    form = await request.post()
+    try:
+        settings = SharedSettings.from_form(form)
+    except ConfigError as exc:
+        return web.json_response({"ok": False, "message": t("invalid_value", detail=str(exc))}, status=400)
+    request.app[RADAR].update_settings(settings)
+    log.info("Shared settings saved")
+    return web.json_response({"ok": True, "message": t("saved")})
+
+
+async def save_notify(request: web.Request) -> web.Response:
+    _ajax(request)
+    radar, user = request.app[RADAR], _user_id(request)
+    if radar.users is None or user is None:
+        raise web.HTTPForbidden()
+    t = _ctx(request)["t"]
+    form = await request.post()
+    try:
+        prefs = NotifyPrefs.from_form(form, [str(x) for x in form.getall("devices", [])])
+    except ConfigError as exc:
+        return web.json_response({"ok": False, "message": t("invalid_value", detail=str(exc))}, status=400)
+    radar.users.set_notify(user, prefs)
+    log.info("Notification settings saved (%d devices)", len(prefs.devices or ()))
+    return web.json_response({"ok": True, "message": t("saved")})
+
+
+async def send_test(request: web.Request) -> web.Response:
+    _ajax(request)
+    radar, user = request.app[RADAR], _user_id(request)
+    if radar.users is None or user is None:
+        raise web.HTTPForbidden()
+    t = _ctx(request)["t"]
+    count = await radar.notifier.test(user)
+    return web.json_response({"ok": count > 0, "message": t("test_sent", count=count) if count else t("test_none")})
+
+
 async def set_language(request: web.Request) -> web.Response:
     if request.headers.get("X-Requested-With") != "fetch":
         raise web.HTTPBadRequest()
@@ -319,6 +390,10 @@ def ui_app(radar: Radar, addon_mode: bool) -> web.Application:
     app.router.add_get("/changes", changes)
     app.router.add_post("/fetch", fetch_now)
     app.router.add_post("/language", set_language)
+    app.router.add_get("/settings", settings_page)
+    app.router.add_post("/settings/shared", save_shared)
+    app.router.add_post("/settings/notify", save_notify)
+    app.router.add_post("/settings/test", send_test)
     app.router.add_get("/status", status)
     app.router.add_get("/healthz", healthz)
     app.router.add_static("/static/", HERE / "static", append_version=True)

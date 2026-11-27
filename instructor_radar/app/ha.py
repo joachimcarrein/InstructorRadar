@@ -16,6 +16,8 @@ ERROR_NOTIFICATION_ID = "instructor_radar_error"
 class HomeAssistant(Protocol):
     async def language(self) -> str: ...
 
+    async def notify_services(self) -> list[str] | None: ...
+
     async def persistent_notification(self, title: str, message: str, notification_id: str) -> None: ...
 
     async def dismiss_notification(self, notification_id: str) -> None: ...
@@ -50,6 +52,19 @@ class SupervisorHomeAssistant:
             pass
         return "en"
 
+    async def notify_services(self) -> list[str] | None:
+        """All notify services as 'notify.xxx', phones (mobile_app) first; None when Home Assistant is unreachable."""
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as http:
+                async with http.get(f"{self._base}/services", headers={"Authorization": f"Bearer {self._token}"}) as r:
+                    if r.status != 200:
+                        return None
+                    domains = await r.json()
+        except (aiohttp.ClientError, TimeoutError, ValueError):
+            return None
+        notify = next((d for d in domains if isinstance(d, dict) and d.get("domain") == "notify"), {})
+        return sort_services(f"notify.{name}" for name in (notify.get("services") or {}))
+
     async def persistent_notification(self, title: str, message: str, notification_id: str) -> None:
         await self._call(
             "persistent_notification", "create", {"title": title, "message": message, "notification_id": notification_id}
@@ -72,6 +87,9 @@ class FakeHomeAssistant:
     async def language(self) -> str:
         return self.lang
 
+    async def notify_services(self) -> list[str] | None:
+        return sort_services(["notify.persistent_notification", "notify.mobile_app_dev_phone", "notify.mobile_app_dev_tablet"])
+
     async def persistent_notification(self, title: str, message: str, notification_id: str) -> None:
         self.calls.append(("persistent_notification", title, message, notification_id))
 
@@ -80,6 +98,10 @@ class FakeHomeAssistant:
 
     async def notify(self, service: str, title: str, message: str) -> None:
         self.calls.append(("notify", service, title, message))
+
+
+def sort_services(services) -> list[str]:
+    return sorted(set(services), key=lambda s: (not s.startswith("notify.mobile_app_"), s))
 
 
 def from_environment() -> HomeAssistant:

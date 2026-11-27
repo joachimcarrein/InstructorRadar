@@ -13,6 +13,7 @@
     <nav class="tabs">
       <a href="{{ base }}" class="{{ 'active' if page == 'week' }}">{{ t("schedule") }}</a>
       <a href="{{ base }}changes" class="{{ 'active' if page == 'changes' }}">{{ t("changes") }}</a>
+      <a href="{{ base }}settings" class="{{ 'active' if page == 'settings' }}">{{ t("settings") }}</a>
     </nav>
     <div class="status status-{{ status.code }}" id="status" title="{{ status.message }}">
       <span class="dot"></span>

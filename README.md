@@ -9,8 +9,9 @@ driving school's online planner and brings it into Home Assistant:
   optionally the student's name and age;
 - per lesson the student's **lessons so far** (date, instructor, cancel reason), with a badge for a **first lesson**
   or a student who is **new to you**;
-- a **calendar** for automations (reminder before each lesson, a morning summary), via the Remote Calendar integration;
-- a **notification** when a lesson today or tomorrow is added, moved or cancelled.
+- **notifications** to the phones you pick, set up inside the app: schedule changes, a reminder before each lesson
+  and a morning summary;
+- optionally a **calendar entity** in Home Assistant (Remote Calendar integration, internal only).
 
 It fetches at quiet times (default 06:00 and 22:00), holds the planner session for a few seconds and logs out right
 away, because planners limit the number of simultaneous sessions per account.
@@ -27,8 +28,9 @@ The UI is available in English, Dutch and French.
    `https://github.com/joachimcarrein/InstructorRadar`.
 2. Install **Instructor Radar** (a prebuilt image for amd64 or aarch64 is downloaded).
 3. Fill in the configuration (planner address, login), start it and enable **Show in sidebar**.
+4. Open the app and choose your fetch times and notifications in **Settings**.
 
-See [DOCS.md](instructor_radar/DOCS.md) for the full documentation, including the automation examples.
+See [DOCS.md](instructor_radar/DOCS.md) for the full documentation.
 
 ## Development
 

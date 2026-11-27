@@ -181,3 +181,26 @@ dialog:focus, .detail .close:focus:not(:focus-visible) { outline: none; }
   font: inherit; border-radius: .4rem; border: 1px solid var(--line); background: var(--panel); color: var(--text);
   padding: .3rem .4rem;
 }
+
+/* Settings */
+.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: .6rem; padding: 1rem 1.2rem;
+  margin-bottom: 1rem; max-width: 40rem; display: flex; flex-direction: column; gap: .7rem;
+}
+.panel h2 { font-size: 1.05rem; margin: 0; }
+.panel small { color: var(--muted); display: block; }
+.panel fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .3rem; }
+.panel legend { font-weight: 600; margin-bottom: .3rem; }
+.field { display: flex; flex-direction: column; gap: .25rem; }
+.field span { font-weight: 600; }
+.check { display: flex; align-items: center; gap: .45rem; }
+.option { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; }
+.option small { flex-basis: 100%; }
+.inline { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
+.panel input[type=number] { width: 5rem; }
+.panel input[type=text], .panel input[type=number], .panel input[type=time] {
+  font: inherit; padding: .35rem .5rem; border-radius: .4rem; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text);
+}
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }

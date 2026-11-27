@@ -52,7 +52,7 @@ jobs:
           curl -fsS -H "Accept-Language: nl-BE" -H "X-Ingress-Path: /api/hassio_ingress/dev" http://127.0.0.1:8099/ | tee page.html | head -5
           grep -q "Nu ophalen" page.html
           grep -q 'href="/api/hassio_ingress/dev/static/app.css' page.html
-          for p in changes status "static/app.css" "static/app.js"; do
+          for p in changes settings status "static/app.css" "static/app.js"; do
             curl -fsS -o /dev/null -w "%{http_code} $p\n" "http://127.0.0.1:8099/$p"
           done
           id=$(grep -o 'data-id="[^"]*"' page.html | head -1 | sed 's/data-id="//;s/"$//')
