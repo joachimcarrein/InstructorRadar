@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.11.6
+
 - Problems (refused login, captcha, unexpected planner answer, planner unreachable) no longer raise a notification
   in Home Assistant: they are written to the add-on log and shown in the status bar of the app. A notification
   left by an older version is removed at the next successful fetch.
