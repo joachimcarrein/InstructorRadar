@@ -1,5 +1,5 @@
 name: Instructor Radar
-version: "2026.11.0"
+version: "2026.11.1"
 slug: instructor_radar
 description: A driving instructor's lesson schedule from the school's online planner, with change notifications
 url: https://github.com/joachimcarrein/InstructorRadar

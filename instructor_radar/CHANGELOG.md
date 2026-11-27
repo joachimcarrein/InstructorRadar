@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.11.1
+
 - **Settings inside the app.** *For everyone*: days ahead, fetch times, show student names and ages (these were add-on
   options). *My notifications*, per Home Assistant user like in MedStock: the devices (Companion app phones
   suggested), schedule changes (days ahead), a **reminder before each lesson** and a **morning summary**, plus a test
