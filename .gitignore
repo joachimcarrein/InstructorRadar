@@ -1,0 +1,23 @@
+# Local only, never commit
+secret.config
+PLAN.md
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.swp
+
+# Local app data
+*.db
+*.db-wal
+*.db-shm
+
+# OS
+.DS_Store
+Thumbs.db
+.playwright-mcp/
+__pycache__/
