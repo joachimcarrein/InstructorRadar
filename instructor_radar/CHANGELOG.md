@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.11.2
+
 - No notifications at all until a user sets them up in **Settings › My notifications** (schedule changes no
   longer appear as a notification in Home Assistant when nobody has).
 
