@@ -190,7 +190,15 @@ class Radar:
         students = {k: v for k, v in self.state.students.items()}
         keys = sorted({lesson.student_key for lesson in lessons if lesson.student_key})
         changed = {c.lesson.student_key for c in changes}
-        todo = [k for k in keys if k not in students or students[k].refreshed < today or k in changed]
+        want_age = self.settings.include_student_age
+        todo = [
+            k
+            for k in keys
+            if k not in students
+            or students[k].refreshed < today
+            or k in changed
+            or (want_age and not students[k].with_age)  # ages switched on after this student was fetched
+        ]
         refreshed = 0
         for key in todo[:MAX_STUDENTS_PER_RUN]:
             try:
@@ -201,7 +209,7 @@ class Radar:
                 # One odd student page must not cost the whole schedule.
                 log.warning("Student details skipped: %s", type(exc).__name__)
                 continue
-            students[key] = StudentRecord(info=info, refreshed=today)
+            students[key] = StudentRecord(info=info, refreshed=today, with_age=want_age)
             refreshed += 1
         return students, refreshed
 

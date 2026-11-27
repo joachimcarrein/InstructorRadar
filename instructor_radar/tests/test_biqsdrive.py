@@ -132,6 +132,23 @@ async def test_second_run_same_day_skips_student_refresh(make_radar):
     assert not any("crud_customer" in c for c in planner.calls)
 
 
+async def test_switching_ages_on_fetches_students_again_the_same_day(make_radar):
+    from dataclasses import replace
+
+    radar, planner = await make_radar(include_student_name=True)
+    await radar.run()
+    assert all(x.student_age is None for x in radar.state.lessons.values())
+    radar.update_settings(replace(radar.settings, include_student_age=True))
+    radar.test_clock["now"] += dt.timedelta(hours=1)
+    await radar.run()
+    assert {x.student_age for x in radar.state.lessons.values()} == {17}
+    # Fetched with ages now: the next run the same day leaves the students alone again.
+    planner.calls.clear()
+    radar.test_clock["now"] += dt.timedelta(hours=1)
+    await radar.run()
+    assert not any("crud_customer" in c for c in planner.calls)
+
+
 def test_appointment_title_for_entries_without_student():
     from app.providers.biqsdrive import _appointment_title
 
