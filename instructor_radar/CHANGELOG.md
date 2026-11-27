@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.11.0
+
 - First version. Reads a driving instructor's schedule from the school's biqsDRIVE planner at quiet times (default
   06:00 and 22:00), in one short session with an explicit logout.
 - Weekly schedule in the sidebar: lesson number or exam, manual or automatic, optional student name and age, badges
