@@ -107,7 +107,7 @@ def from_legacy_options(raw: dict) -> SharedSettings:
 
 @dataclass(frozen=True)
 class NotifyPrefs:
-    devices: tuple[str, ...] | None = None  # None = never saved (the phones are suggested)
+    devices: tuple[str, ...] | None = None  # None = never saved (nothing is ticked or sent)
     changes: bool = True
     changes_days: int = 2
     reminder: bool = False

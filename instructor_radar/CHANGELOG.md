@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Settings › My notifications: no device is ticked by default any more (Home Assistant lists the phones of every
+  user); tick only your own.
+
 ## 2026.11.1
 
 - **Settings inside the app.** *For everyone*: days ahead, fetch times, show student names and ages (these were add-on
